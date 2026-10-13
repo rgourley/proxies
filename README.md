@@ -154,3 +154,7 @@ A person file names its `seat`. The runner gets the seat file, then `org.md`, th
 - Each proxy runs in its own subagent. The main thread facilitates and never speaks as a proxy.
 - The runner receives only its own seat, org, and person text, plus the artifact.
 - The first round is blind. Proxies see each other only through attributed transcripts.
+
+## License
+
+[FSL-1.1-MIT](LICENSE.md), the Functional Source License. You can use, modify, and share Proxies for any purpose, including inside your company, except to sell a product or service that competes with it. Each version becomes MIT two years after its release.

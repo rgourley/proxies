@@ -6,5 +6,6 @@
     "pages": "node scripts/runs.ts",
     "export-org": "node scripts/export-org.ts",
     "import-org": "node scripts/import-org.ts"
-  }
+  },
+  "license": "FSL-1.1-MIT"
 }
