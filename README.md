@@ -38,11 +38,38 @@ Run from this folder in Claude Code. Full details live in `.claude/skills/proxie
 | `/proxies compare <a> <b>` | Each person picks a version |
 | `/proxies ask <person> "<question>"` / `talk <person>` | Talk to one person |
 | `/proxies calibrate <person>` | Tune a card against what the real person said |
-| `/proxies new`, `clone`, `org new` | Add people and orgs |
+| `/proxies org new <id> "<brief>"` | Create an org |
+| `/proxies new <handle> <seat>` | Add a person to the active org |
+| `/proxies clone <handle> --to <org>` | Copy a person into another org and adapt them |
 | `/proxies export <org>` / `import <file>` | Share an org as one JSON file |
 | `/proxies pages` | Rebuild and republish the results page |
 
 All feedback is in plain business English.
+
+## Making your own org and people
+
+Describe the company in a sentence or two, and Claude drafts the org for you:
+
+```
+/proxies org new acme "Mid-size insurer, 4,000 staff, buying a claims tool. Regulated by state insurance boards. IT and compliance can veto vendors."
+```
+
+Claude writes `orgs/acme/org.md`: the business, rules, culture, who decides what, and the company's vocabulary. Anything it guessed rather than took from your description is marked "(assumed)". You see the draft before it saves. Then it offers to add people.
+
+Add one person at a time. Give a short handle and a seat, which is the role template they start from:
+
+```
+/proxies use acme
+/proxies new dana compliance
+```
+
+Claude asks for the name and title, drafts the rest from the seat and the org, and shows you before it saves. The seats are `accessibility`, `ai-enablement`, `business-lead`, `client-experience`, `compliance`, `engineering`, `exec-sponsor`, `finance`, `market-data`, `practitioner`, `product`, and `risk`. Add your own to `seats/` as markdown files.
+
+To reuse someone you already built, `/proxies clone dana --to acme` copies the person and rewrites their title, goals, and hard lines for the new company.
+
+Everything is plain markdown, so you can also write or edit the files by hand. Copy `orgs/tilt/` as a starting point. Each person needs a `decision` level, which sets their weight in a meeting: `owner` decides, `veto` can block, `approve` must sign off, `consult` gives input, and `inform` is kept in the loop.
+
+The people get better when you tune them against the real thing. After a run, if the real Dana would have said something different, run `/proxies calibrate dana "what she actually said"`. Claude proposes edits to her file and logs the change.
 
 ## Using the results page
 
