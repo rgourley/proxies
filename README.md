@@ -69,7 +69,7 @@ To reuse someone you already built, `/proxies clone dana --to acme` copies the p
 
 Everything is plain markdown, so you can also write or edit the files by hand. Copy `orgs/tilt/` as a starting point. Each person needs a `decision` level, which sets their weight in a meeting: `owner` decides, `veto` can block, `approve` must sign off, `consult` gives input, and `inform` is kept in the loop.
 
-The people get better when you tune them against the real thing. After a run, if the real Dana would have said something different, run `/proxies calibrate dana "what she actually said"`. Claude proposes edits to her file and logs the change.
+The people get better when you tune them against the real thing. After a run, if the real Dana would have said something different, run `/proxies calibrate dana "what they actually said"`. Claude proposes edits to their file and logs the change.
 
 ## Using the results page
 
