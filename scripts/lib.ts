@@ -52,6 +52,7 @@ const SEAT_COLORS: ReadonlyMap<string, string> = new Map([
   ["business-lead", "#2a7a99"],
   ["finance", "#8a6a2f"],
   ["market-data", "#a3412f"],
+  ["producer", "#6b7a2a"],
 ]);
 const FALLBACK_COLOR = "#6b6f76";
 export const DECISION_ORDER: readonly Decision[] = ["owner", "veto", "approve", "consult", "inform"];
