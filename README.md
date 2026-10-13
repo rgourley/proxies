@@ -4,6 +4,8 @@ A simulated room of stakeholders you run an idea, protoype or design concept pas
 
 Proxies are simulations. They show the concerns a role would likely raise. They do not predict what a real person says.
 
+<img width="1113" height="842" alt="Screenshot 2026-10-13 at 1 16 44 PM" src="https://github.com/user-attachments/assets/604ad6ea-848c-429b-8b1e-d323037466bf" />
+
 ## Why not just ask for five personas in one prompt
 
 - Each person runs as a separate agent that sees only their own card, so they don't blur into one agreeable voice.
