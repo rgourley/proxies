@@ -1,0 +1,10 @@
+{
+  "name": "proxies",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pages": "node scripts/runs.ts",
+    "export-org": "node scripts/export-org.ts",
+    "import-org": "node scripts/import-org.ts"
+  }
+}

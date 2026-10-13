@@ -1,0 +1,127 @@
+# Proxies: simulated stakeholder reviews in Claude Code
+
+A simulated room of stakeholders you run an idea, protoype or design concept past before the real meeting. Each person has a card: role, incentives, hard lines, blind spots, voice. You give them a flow, spec, or prototype, and each one tells you where it breaks for them.
+
+Proxies are simulations. They show the concerns a role would likely raise. They do not predict what a real person says.
+
+## Why not just ask for five personas in one prompt
+
+- Each person runs as a separate agent that sees only their own card, so they don't blur into one agreeable voice.
+- The people are saved and reused, and you can correct them against what the real person said.
+- They review against the real spec and decision docs, not a stale draft.
+- Formats force an outcome: blind positions, then rebuttals, then a decision, with the dissent recorded.
+- Every run lands on one results page: who blocks, what's critical, what fixes it. See [Using the results page](#using-the-results-page).
+
+## Setup
+
+You need Node 22 or later and Claude Code. There is nothing to install.
+
+```bash
+git clone https://github.com/rgourley/proxies.git
+cd proxies
+claude
+```
+
+Claude Code loads the `/proxies` skill and the persona agent from `.claude/` when it starts in this folder. Start a new session after you clone or pull, so it picks up changes to either. Then run `/proxies use tilt` to check that it works.
+
+## Commands
+
+Run from this folder in Claude Code. Full details live in `.claude/skills/proxies/SKILL.md`.
+
+| Command | What it does |
+|---|---|
+| `/proxies use <org>` | Pick the org and list its people |
+| `/proxies redteam <file> "<scenario>"` | Everyone tries to break it |
+| `/proxies meeting <file> "<question>"` | Debate, then the decision owner calls it |
+| `/proxies prep <file>` | Each person's top questions |
+| `/proxies followup <run> <file>` | Check whether a revision answered their objections |
+| `/proxies compare <a> <b>` | Each person picks a version |
+| `/proxies ask <person> "<question>"` / `talk <person>` | Talk to one person |
+| `/proxies calibrate <person>` | Tune a card against what the real person said |
+| `/proxies new`, `clone`, `org new` | Add people and orgs |
+| `/proxies export <org>` / `import <file>` | Share an org as one JSON file |
+| `/proxies pages` | Rebuild and republish the results page |
+
+All feedback is in plain business English.
+
+## Using the results page
+
+Every run lands on one page. You read and share results there, not in markdown files.
+
+Build it and open it:
+
+```bash
+npm run pages
+open runs.html
+```
+
+To read a run:
+
+1. Pick a run from the list in the right sidebar. The newest run is at the top. Each run has its own link, so you can send someone straight to it.
+2. Check the avatars under the title. The dot on each one is that person's verdict: red is Block, amber is Rework, green is Ship.
+3. Hover **Reviewed** to see what they reviewed. Hover **Context** to see the docs every person read first.
+4. If the run reviewed screens, open **Screens they reviewed** and click any thumbnail to see it full size.
+5. Read the summary: who blocks and why, the ranked findings with severity tags and who raised each one, and the fixes that clear the most blocks.
+6. Scroll down for each person's full response, blocks first.
+
+To look at the people:
+
+- Click any name or avatar to open that person's card: role, decision rights, hard lines, blind spots, and voice.
+- Switch the sidebar from **Runs** to **People** to browse a whole org. Use the org picker to change orgs, and **About** to read the org's background.
+- Each card has a **Copy** button for its `/proxies ask <person>` command, so you can paste it into Claude Code and question that person directly.
+- Collapse the sidebar when you want the full width for reading.
+
+To build a page with only one org, for a demo or a screenshot, run `npm run pages -- --org tilt`. It writes `runs.tilt.html`.
+
+To share it, run `/proxies pages`. It rebuilds the page and republishes it as a private Claude artifact. Then use the artifact's Share menu to give your team access.
+
+## Sharing an org
+
+An org exports to one JSON file with its people, their calibration logs, and the seats they use. In Claude Code, run `/proxies export tilt` and `/proxies import tilt.proxies.json`. From a terminal:
+
+```bash
+npm run export-org -- tilt
+```
+
+That writes `tilt.proxies.json`. Whoever receives it imports it into their own copy of the repo:
+
+```bash
+npm run import-org -- tilt.proxies.json
+```
+
+On the results page, open **People**, pick the org, and click **Export** to copy the same JSON. Then run `/proxies import` in Claude Code and it reads the clipboard. Clipboard import uses `pbpaste`, so it works on macOS. Elsewhere, paste the JSON into a file and run `/proxies import <file>`. The page only exports, because it can't write into anyone's repo.
+
+The import refuses to overwrite an org that already exists. Add `--as <new-id>` to import it under another name. Seats the other repo lacks are added. If a seat differs from their copy, the import stops and names it.
+
+## Sample orgs
+
+Two fictional orgs ship with the repo so you can try it right away. `tilt` is a SaaS company that makes a project planning tool. `brightpath` is a 14-site clinic network. They hold people only. You bring the thing to review:
+
+```
+/proxies use tilt
+/proxies redteam path/to/your-flow.mmd "an agency invites 30 client reviewers"
+```
+
+Client orgs, briefs, and runs stay local. `.gitignore` lists them.
+
+## Layout
+
+```
+seats/                  role templates that every org reuses
+orgs/<org>/org.md       company context: regulators, culture, decision rights, vocabulary
+orgs/<org>/people/      one file per person; frontmatter feeds the card
+orgs/<org>/calibration/ one log per person: real quotes, misses, and the edits they caused
+formats/                rules for meeting, redteam, ask/talk
+briefs/<project>/       shared project context: brief.md plus the real source docs every proxy reads
+runs/                   one folder per run, with every proxy's output
+.claude/agents/         the persona runner (one person per subagent)
+.claude/skills/proxies/ the orchestrator
+```
+
+A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file. Later layers win.
+
+## Isolation
+
+- Each proxy runs in its own subagent. The main thread facilitates and never speaks as a proxy.
+- The runner receives only its own seat, org, and person text, plus the artifact.
+- The first round is blind. Proxies see each other only through attributed transcripts.
