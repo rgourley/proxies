@@ -130,4 +130,11 @@ Each org has its own page. Run `node scripts/runs.ts --org <org>` for every org 
 An org with no URL yet gets a new artifact. Add its URL to that file. Never publish one org's runs on another org's page.
 
 ## Report back
-After a run, show the user the decision or findings summary and the run folder path. Then rebuild and republish that org's page, as in `pages`. Do not paraphrase a proxy in a way that changes its position.
+The page is the default place for results. This applies to `meeting`, `redteam`, `prep`, `followup`, and `compare`. It does not apply to `ask` and `talk`, which answer in chat.
+- While a run is in progress, do not report each proxy or each round in chat. Wait until the run is complete.
+- After the run, run `node scripts/runs.ts --org <org>` and open `runs.<org>.html` with `open`. Then republish that org's page, as in `pages`, if the org has a URL in `.claude/pages.local.md`.
+- In chat, write only the verdict line, the run folder path, and any assumption that you made in the artifact. Do not repeat the summary that the page shows.
+- With `--noui`, do not open the page. Show the decision or findings summary and the run folder path in chat. Still rebuild the page files.
+- With `--local`, do not republish. Build and open the local page only.
+
+Do not paraphrase a proxy in a way that changes its position.
