@@ -147,7 +147,7 @@ runs/                   one folder per run, with every proxy's output
 .claude/skills/proxies/ the orchestrator
 ```
 
-A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file. Later layers win.
+A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file. 
 
 ## Isolation
 
