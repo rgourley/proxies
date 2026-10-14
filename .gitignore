@@ -8,3 +8,4 @@ runs.artifact.html
 *.proxies.json
 runs.*.html
 *.local.md
+*.proxies.json.zip
