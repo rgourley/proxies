@@ -1,6 +1,6 @@
 # Proxies: simulated stakeholder reviews in Claude Code
 
-A simulated room of stakeholders you run an idea, protoype or design concept past before the real meeting. Each person has a card: role, incentives, hard lines, blind spots, voice. You give them a flow, spec, or prototype, and each one tells you where it breaks for them.
+A simulated room of stakeholders you run an idea, prototype, or design concept past before the real meeting. Each person has a card: role, incentives, hard lines, blind spots, voice. You give them a flow, spec, or prototype, and each one tells you where it breaks for them.
 
 Proxies are simulations. They show the concerns a role would likely raise. They do not predict what a real person says.
 
@@ -55,8 +55,8 @@ Flags for the run commands:
 | `--with a,b,c` | Invite exactly these people. Overrides `--use` |
 | `--dissenter <handle>` | This person holds their position unless someone answers their block |
 | `--no-decision` | End a meeting after the rebuttals, with no decision round |
+| `--wordy` | Remove the word limits, so each person writes at full length |
 | `--noui` | Show the results in chat and do not open the page |
-| `--local` | Build and open the page on your machine, but do not republish it |
 
 After a run, the results page opens by default. Chat shows only the verdict and the run folder.
 
@@ -79,7 +79,7 @@ Add one person at a time. Give a short handle and a seat, which is the role temp
 /proxies new dana compliance
 ```
 
-Claude asks for the name and title, drafts the rest from the seat and the org, and shows you before it saves. The seats are `accessibility`, `ai-enablement`, `business-lead`, `client-experience`, `compliance`, `engineering`, `exec-sponsor`, `finance`, `market-data`, `practitioner`, `product`, and `risk`. Add your own to `seats/` as markdown files.
+Claude asks for the name and title, drafts the rest from the seat and the org, and shows you before it saves. The seats are `accessibility`, `ai-enablement`, `business-lead`, `client-experience`, `compliance`, `engineering`, `exec-sponsor`, `finance`, `market-data`, `practitioner`, `producer`, `product`, and `risk`. Add your own to `seats/` as markdown files.
 
 To reuse someone you already built, `/proxies clone dana --to acme` copies the person and rewrites their title, goals, and hard lines for the new company.
 
@@ -138,14 +138,20 @@ The import refuses to overwrite an org that already exists. Add `--as <new-id>` 
 
 ## Sample orgs
 
-Two fictional orgs ship with the repo so you can try it right away. `tilt` is a SaaS company that makes a project planning tool. `brightpath` is a 14-site clinic network. They hold people only. You bring the thing to review:
+Three fictional orgs ship with the repo so you can try it right away. `tilt` is a SaaS company that makes a project planning tool. `brightpath` is a 14-site clinic network. `northpine` is a game studio that runs one live game and is building its next one. They hold people only. You bring the thing to review:
 
 ```
 /proxies use tilt
 /proxies redteam path/to/your-flow.mmd "an agency invites 30 client reviewers"
 ```
 
-Client orgs, briefs, and runs stay local. `.gitignore` lists them.
+Git does not keep a client org out of the repo by default. List client orgs, briefs, and runs in `.git/info/exclude`. That file stays on your machine and is never pushed:
+
+```
+orgs/acme/
+briefs/acme/
+runs/*acme*/
+```
 
 ## Layout
 
@@ -154,14 +160,14 @@ seats/                  role templates that every org reuses
 orgs/<org>/org.md       company context: regulators, culture, decision rights, vocabulary
 orgs/<org>/people/      one file per person; frontmatter feeds the card
 orgs/<org>/calibration/ one log per person: real quotes, misses, and the edits they caused
-formats/                rules for meeting, redteam, ask/talk
+formats/                rules for each command: meeting, redteam, prep, followup, compare, ask/talk, calibrate
 briefs/<project>/       shared project context: brief.md plus the real source docs every proxy reads
 runs/                   one folder per run, with every proxy's output
 .claude/agents/         the persona runner (one person per subagent)
 .claude/skills/proxies/ the orchestrator
 ```
 
-A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file. 
+A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file.
 
 ## Isolation
 
