@@ -9,3 +9,5 @@ runs.artifact.html
 runs.*.html
 *.local.md
 *.proxies.json.zip
+share/
+.DS_Store

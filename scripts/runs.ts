@@ -1,9 +1,9 @@
 // Build the runs page from every runs/<run>/meta.md and the proxy output files in that run.
 // Each person name links to that person's card on the cards page and shows a short preview on hover.
 // The script writes runs.html for local use and runs.artifact.html for the Artifact publisher.
-import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { COPY_SCRIPT, DECISION_LABEL, FAVICON, PERSON_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, initials, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
+import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, PERSON_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
 import type { Frontmatter, Org, Person } from "./lib.ts";
 import { orgBundle } from "./bundle.ts";
 import { card, CARD_CSS } from "./card.ts";
@@ -282,7 +282,7 @@ function stripTitleLine(source: string): string {
 function avatar(person: Person, verdict: Verdict | null): string {
   const label = verdict ? `${person.name}: ${VERDICT_LABEL.get(verdict)}` : person.name;
   const dot = verdict ? `<span class="status-dot v-${verdict}" aria-hidden="true"></span>` : "";
-  return `<span class="ref avatar-ref" style="--seat:${seatColor(person.seat)}"><a class="avatar" href="#${esc(cardId(person))}" data-person="${esc(cardId(person))}" aria-label="${esc(label)}">${esc(initials(person.name))}${dot}</a>${preview(person)}</span>`;
+  return `<span class="ref avatar-ref" style="--seat:${seatColor(person.seat)}"><a class="avatar" href="#${esc(cardId(person))}" data-person="${esc(cardId(person))}" aria-label="${esc(label)}">${face(person)}${dot}</a>${preview(person)}</span>`;
 }
 
 function latestVerdicts(run: Run): Map<string, Verdict | null> {
@@ -297,7 +297,7 @@ function output(item: Output, org: Org): string {
   return `<details class="output" style="--seat:${seatColor(p.seat)}">
     <summary>
       <span class="status-icon ${item.verdict ? `v-${item.verdict}` : ""}" title="${esc(verdict)}" aria-label="${esc(verdict)}"></span>
-      <span class="mono" aria-hidden="true">${esc(initials(p.name))}</span>
+      <span class="mono" aria-hidden="true">${face(p)}</span>
       <span class="out-who">${mention(p, esc(p.name))}<span class="out-title">${esc(p.title)}</span></span>
       <span class="out-stats">${item.critical > 0 ? `<span class="sev sev-critical">${item.critical} critical</span>` : ""}${item.high > 0 ? `<span class="sev sev-high">${item.high} high</span>` : ""}</span>
       <span class="verdict-text ${item.verdict ? `v-${item.verdict}` : ""}">${esc(verdict)}</span>
@@ -346,7 +346,7 @@ function thread(t: Thread, org: Org): string {
   return `<details class="output thread" style="--seat:${seatColor(p.seat)}">
     <summary>
       <span class="status-icon ${latest ? `v-${latest}` : ""}" aria-hidden="true"></span>
-      <span class="mono" aria-hidden="true">${esc(initials(p.name))}</span>
+      <span class="mono" aria-hidden="true">${face(p)}</span>
       <span class="out-who">${mention(p, esc(p.name))}<span class="out-title">${esc(p.title)}</span></span>
       ${changed ? `<span class="moved">Changed</span>` : ""}
       <span class="thread-path">${path}</span>
@@ -358,7 +358,7 @@ function thread(t: Thread, org: Org): string {
 function ownerDecisionBlock(d: { person: Person; markdown: string }, org: Org): string {
   const p = d.person;
   return `<article class="summary owner-decision" style="--seat:${seatColor(p.seat)}">
-    <p class="owner-by"><span class="mono" aria-hidden="true">${esc(initials(p.name))}</span><span>Decision, written by ${mention(p, esc(p.name))}, ${esc(p.title)}</span></p>
+    <p class="owner-by"><span class="mono" aria-hidden="true">${face(p)}</span><span>Decision, written by ${mention(p, esc(p.name))}, ${esc(p.title)}</span></p>
     <div class="md">${markdown(stripTitleLine(d.markdown), org)}</div>
   </article>`;
 }
@@ -510,7 +510,8 @@ pre.code { background: var(--panel); border-radius: 6px; padding: 12px; overflow
 .run-meta .overview + .overview { margin-left: 0; }
 .ov-pop-note { color: var(--ink-2); font-size: 13.5px; }
 .ov-pop pre.mermaid { margin: 0; background: var(--panel); border-radius: 6px; padding: 10px; font: 11.5px/1.45 var(--font-mono); white-space: pre-wrap; text-align: center; }
-.avatar { position: relative; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); border: 1px solid var(--rule-2); color: var(--ink-2); font: 600 9px var(--font-display); text-decoration: none; }
+.avatar { position: relative; display: block; width: 30px; height: 30px; border-radius: 50%; text-decoration: none; }
+.avatar svg, .mono svg, .nav-avatar svg { display: block; width: 100%; height: 100%; }
 .summary { margin-top: 20px; padding: 4px 0 8px; }
 .summary .md { font-size: 15px; line-height: 1.65; }
 .summary .md h3 { margin-top: 28px; font: 600 18px/1.3 var(--font-display); letter-spacing: -0.01em; }
@@ -542,7 +543,7 @@ pre.code { background: var(--panel); border-radius: 6px; padding: 12px; overflow
 .output[open] summary::after { transform: rotate(45deg); }
 .status-icon { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--c, var(--muted)); --c: var(--muted); background: radial-gradient(circle, var(--c) 0 3px, transparent 3.5px); }
 .status-icon.v-block { background: var(--c); box-shadow: inset 0 0 0 2px var(--bg); }
-.mono { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--panel); border: 1px solid var(--rule-2); color: var(--ink-2); font: 600 8.5px var(--font-display); }
+.mono { flex: none; display: block; width: 26px; height: 26px; border-radius: 50%; }
 .out-who { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex: 1; overflow: hidden; }
 .out-who > .ref { font-weight: 500; font-size: 14px; flex: none; }
 .out-who > .ref > a { text-decoration: none; }
@@ -626,7 +627,7 @@ th { font: 500 11px var(--font-body); letter-spacing: .06em; text-transform: upp
 .org-people button:hover { background: var(--hover); }
 .op-name { font-weight: 500; flex: none; }
 .op-title { color: var(--muted); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-avatar { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--panel); border: 1px solid var(--rule-2); color: var(--ink-2); font: 600 8.5px var(--font-display); }
+.nav-avatar { flex: none; display: block; width: 22px; height: 22px; border-radius: 50%; }
 .nav-group button.nav-person { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; background: transparent; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
 dialog#person-dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100vh - 88px); margin: 64px auto 24px; padding: 0; border: 0; border-radius: 14px; background: transparent; overflow: visible; }
 dialog#person-dialog::backdrop { background: rgba(10, 10, 12, .55); backdrop-filter: blur(2px); }
@@ -649,7 +650,7 @@ function peopleNav(orgs: Org[]): string {
   const picker = `<div class="org-pick-row"><select id="org-pick" aria-label="Org">${orgs.map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("")}</select><button type="button" class="org-about" data-person="org-${esc(orgs[0]?.id ?? "")}">About</button><button type="button" class="org-about org-export" title="Copy this org as JSON. Paste it into Claude Code with /proxies import">Export</button></div>`;
   return picker + orgs
     .map((org, i) => `<div class="nav-group org-group" data-org="${esc(org.id)}"${i === 0 ? "" : " hidden"}><p class="nav-label">${org.people.length} people</p>${org.people
-      .map((p) => `<button type="button" class="nav-person" data-person="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${esc(initials(p.name))}</span>${esc(p.name)}<span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button>`)
+      .map((p) => `<button type="button" class="nav-person" data-person="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${face(p)}</span>${esc(p.name)}<span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button>`)
       .join("")}</div>`)
     .join("");
 }
@@ -662,7 +663,7 @@ function orgCard(org: Org): string {
   ${org.note ? `<p class="org-note">${esc(org.note)}</p>` : ""}
   ${org.useCases.length ? `<h4>Use cases</h4><ul class="org-uses">${org.useCases.map((u) => `<li><code>${esc(u.id)}</code> ${esc(u.label)}</li>`).join("")}</ul>` : ""}
   <h4>People</h4>
-  <ul class="org-people">${org.people.map((p) => `<li><button type="button" data-person="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${esc(initials(p.name))}</span><span class="op-name">${esc(p.name)}</span><span class="op-title">${esc(p.title)}</span><span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button></li>`).join("")}</ul>
+  <ul class="org-people">${org.people.map((p) => `<li><button type="button" data-person="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${face(p)}</span><span class="op-name">${esc(p.name)}</span><span class="op-title">${esc(p.title)}</span><span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button></li>`).join("")}</ul>
 </article>`;
 }
 
@@ -729,7 +730,7 @@ ${FONTS}
 <div class="shell" id="top">
   ${sidebar(navGroup(runs), peopleNav(orgs))}
   <main class="content"><div class="content-inner">
-    <header class="masthead"><span class="wordmark">Proxies</span></header>
+    <header class="masthead">${LOGO}</header>
     ${runs.map((r) => runSection(r, imgDir)).join("\n")}
   </div></main>
 </div>
@@ -745,11 +746,81 @@ ${RUN_SCRIPT}
 ${ORG_SCRIPT}`;
 }
 
+const SHARE_DIR = join(ROOT, "share");
+
+// The share file holds one run and the cards of its attendees only. It has no sidebar and no org export.
+function shareFragment(run: Run): string {
+  const org: Org = { ...run.org, people: run.org.people.filter((p) => run.attendees.some((a) => a.handle === p.handle)) };
+  return `<title>${esc(run.title)}</title>
+${FAVICON}
+${FONTS}
+<style>${STYLE}${CARD_CSS}${SHARE_CSS}</style>
+<main class="content share"><div class="content-inner">
+  <header class="masthead">${LOGO}</header>
+  ${runSection(run, (r) => `briefs/${r.brief?.id ?? ""}/prototype/`)}
+</div></main>
+<dialog id="person-dialog" aria-label="Person card">
+  <button type="button" class="dialog-close" aria-label="Close">Close</button>
+  <div class="dialog-body"></div>
+</dialog>
+${templates([org])}
+${PERSON_SCRIPT}
+${RUN_SCRIPT}`;
+}
+
+const SHARE_CSS = `
+.share { padding-inline: 24px; }
+@media print {
+  .share { padding: 0; }
+  .masthead, .dialog-close, .copy-btn, .output summary::after, .gallery summary::after { display: none; }
+  tr, .output summary, .step-label { break-inside: avoid; }
+  h3, h4, .round-label, .output summary { break-after: avoid; }
+  .gallery-strip { flex-wrap: wrap; overflow: visible; }
+  .run-head .overview, .run-head .context { break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+}`;
+
+// Each screenshot path becomes a data URI, so the file works on its own in Notion, email, or a PDF.
+function inlineScreens(html: string): string {
+  // The full-size view reads the thumbnail's data, so each screenshot is stored once.
+  return html
+    .replace(/data-image="briefs\/[^"]+\.png"/g, 'data-image="thumb"')
+    .replace(/src="(briefs\/[^"]+\.png)"/g, (_m, path: string) => {
+      const file = join(ROOT, path);
+      if (!existsSync(file)) throw new Error(`Screenshot not found: ${path}`);
+      return `src="data:image/png;base64,${readFileSync(file).toString("base64")}"`;
+    })
+    .replace("</body>", `<script>document.querySelectorAll('[data-image="thumb"]').forEach((b) => { b.dataset.image = b.querySelector("img").src; });</script>\n</body>`);
+}
+
+// The PDF needs every toggle open, because a printed page cannot expand one.
+function openAll(html: string): string {
+  return html.replace(/<details(?![^>]*\bopen\b)/g, "<details open");
+}
+
+function share(id: string, orgs: Org[]): void {
+  if (!existsSync(join(RUNS_DIR, id, "meta.md"))) throw new Error(`No run named ${id} in runs/`);
+  const run = readRun(id, orgs);
+  if (inProgress(run)) throw new Error(`Run ${id} is still in progress. Write its summary before you share it.`);
+  if (!existsSync(SHARE_DIR)) mkdirSync(SHARE_DIR);
+  const html = inlineScreens(localDocument(shareFragment(run)));
+  writeFileSync(join(SHARE_DIR, `${id}.html`), html);
+  writeFileSync(join(SHARE_DIR, `${id}.print.html`), openAll(html));
+  console.log(`Wrote share/${id}.html and share/${id}.print.html`);
+}
+
 // With "--org <id>", the page shows only that org and its runs, and the files take the org id as a suffix.
+// With "--run <id>", the script writes one shareable file for that run and nothing else.
 function main(): void {
   const args = process.argv.slice(2);
   const only = args.includes("--org") ? args[args.indexOf("--org") + 1] : null;
   const allOrgs = readOrgs();
+  if (args.includes("--run")) {
+    const id = args[args.indexOf("--run") + 1];
+    if (!id) throw new Error("Usage: node scripts/runs.ts --run <run-folder>");
+    share(id, allOrgs);
+    return;
+  }
   if (only !== null && !allOrgs.some((o) => o.id === only)) throw new Error(`--org ${String(only)} matches no folder in orgs/`);
   const orgs = only === null ? allOrgs : allOrgs.filter((o) => o.id === only);
   const runs = readdirSync(RUNS_DIR)
