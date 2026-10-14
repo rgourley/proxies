@@ -1,5 +1,5 @@
 // Shared parsing and page parts for the cards page and the runs page.
-import { avatarSvg } from "./avatar.ts";
+import { avatarSymbol } from "./avatar.ts";
 import type { AvatarInput } from "./avatar.ts";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -42,19 +42,21 @@ export const RUNS_DIR = join(ROOT, "runs");
 
 
 
+// Seat colors come from the illustration palette: tomato, rust, mustard, teal, olive, slate, and charcoal.
+// Each one is dark enough for white header text.
 const SEAT_COLORS: ReadonlyMap<string, string> = new Map([
-  ["product", "#3b6fb6"],
-  ["compliance", "#7b5ea7"],
-  ["risk", "#b4473a"],
-  ["engineering", "#2e7f6e"],
-  ["accessibility", "#b07a1c"],
-  ["client-experience", "#bf567f"],
-  ["exec-sponsor", "#3f4752"],
-  ["ai-enablement", "#5a55c4"],
-  ["practitioner", "#4f7f3a"],
-  ["business-lead", "#2a7a99"],
-  ["finance", "#8a6a2f"],
-  ["market-data", "#a3412f"],
+  ["product", "#2e6b6e"],
+  ["compliance", "#7a2f1c"],
+  ["risk", "#b83a22"],
+  ["engineering", "#1f4446"],
+  ["accessibility", "#8a6424"],
+  ["client-experience", "#b5521f"],
+  ["exec-sponsor", "#26282b"],
+  ["ai-enablement", "#4d5c5a"],
+  ["practitioner", "#4f6b2e"],
+  ["business-lead", "#38606a"],
+  ["finance", "#6b4a2a"],
+  ["market-data", "#9a3a26"],
   ["producer", "#6b7a2a"],
 ]);
 const FALLBACK_COLOR = "#6b6f76";
@@ -205,12 +207,19 @@ export function esc(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Every person shows as a generated avatar. The SVG scales to the size of its container.
-// The counter gives each copy on the page its own filter id.
-let faceCount = 0;
+// Every person shows as a generated avatar. Each page draws an avatar once, in avatarSprite, and every place
+// that shows the person points at it with <use>. The SVG scales to the size of its container.
+function avatarId(person: Person): string {
+  return `av-${person.org}-${person.handle}`;
+}
+
 export function face(person: Person): string {
-  faceCount += 1;
-  return avatarSvg(person.avatar, 100, `i${faceCount}`);
+  return `<svg viewBox="0 0 100 100" style="border-radius:50%;overflow:hidden" aria-hidden="true"><use href="#${avatarId(person)}"/></svg>`;
+}
+
+// The sprite holds one symbol per person. It is hidden with a zero size, not display none, so its filters still work.
+export function avatarSprite(people: Person[]): string {
+  return `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${people.map((p) => avatarSymbol(p.avatar, avatarId(p))).join("")}</svg>`;
 }
 
 export function seatLabel(seat: string): string {
@@ -405,12 +414,46 @@ export const PERSON_SCRIPT = `<script>
 (() => {
   const dialog = document.getElementById("person-dialog");
   const body = dialog.querySelector(".dialog-body");
-  const open = (id) => {
-    const template = document.getElementById("tpl-" + id);
-    if (!template) return;
-    body.replaceChildren(template.content.cloneNode(true));
-    dialog.showModal();
+  // The arrow keys move through the people around the card that was clicked:
+  // the run's attendee row, the org's list in the sidebar, or every person on the page.
+  let people = [];
+  let current = -1;
+  const unique = (ids) => [...new Set(ids)];
+  const peopleNear = (trigger, id) => {
+    const run = trigger.closest(".run");
+    const group = trigger.closest(".org-group, .org-people");
+    const scope = run ? run.querySelector(".attendees") : group;
+    const ids = scope ? unique([...scope.querySelectorAll("[data-person]")].map((el) => el.dataset.person)) : [];
+    if (ids.includes(id)) return ids;
+    return [...document.querySelectorAll("template[id^='tpl-']")].map((t) => t.id.slice(4)).filter((x) => !x.startsWith("org-"));
   };
+  const show = (id) => {
+    const template = document.getElementById("tpl-" + id);
+    if (!template) return false;
+    body.replaceChildren(template.content.cloneNode(true));
+    if (!dialog.open) dialog.showModal();
+    return true;
+  };
+  const open = (id, trigger) => {
+    people = id.startsWith("org-") ? [] : peopleNear(trigger, id);
+    current = people.indexOf(id);
+    show(id);
+  };
+  document.addEventListener("keydown", (event) => {
+    if (!dialog.open || current < 0 || people.length < 2) return;
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    current = (current + (event.key === "ArrowRight" ? 1 : -1) + people.length) % people.length;
+    show(people[current]);
+  });
+  // A card opened with the mouse clears focus when it closes, so the name's hover card does not stay open.
+  // A card opened with the keyboard keeps focus on the name, so keyboard users do not lose their place.
+  let openedWithPointer = false;
+  dialog.addEventListener("close", () => {
+    people = [];
+    current = -1;
+    if (openedWithPointer && document.activeElement && document.activeElement.closest(".ref")) document.activeElement.blur();
+  });
   document.addEventListener("click", (event) => {
     const shot = event.target.closest("[data-image]");
     if (shot) {
@@ -423,11 +466,13 @@ export const PERSON_SCRIPT = `<script>
       caption.textContent = shot.dataset.caption || "";
       view.append(img, caption);
       body.replaceChildren(view);
+      people = [];
+      current = -1;
       dialog.showModal();
       return;
     }
     const trigger = event.target.closest("[data-person]");
-    if (trigger) { event.preventDefault(); open(trigger.dataset.person); return; }
+    if (trigger) { event.preventDefault(); openedWithPointer = event.detail > 0; open(trigger.dataset.person, trigger); return; }
     if (event.target === dialog || event.target.closest(".dialog-close")) dialog.close();
   });
   document.querySelectorAll(".tabs [data-panel]").forEach((tab) => {

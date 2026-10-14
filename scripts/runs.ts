@@ -3,7 +3,7 @@
 // The script writes runs.html for local use and runs.artifact.html for the Artifact publisher.
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, PERSON_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
+import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PERSON_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
 import type { Frontmatter, Org, Person } from "./lib.ts";
 import { orgBundle } from "./bundle.ts";
 import { card, CARD_CSS } from "./card.ts";
@@ -194,8 +194,7 @@ function preview(person: Person): string {
   return `<span class="pop" role="tooltip">
     <span class="pop-body">
       <span class="pop-row">${seatPill(person.seat)}${decisionPill(person.decision)}</span>
-      <span class="pop-name">${esc(person.name)}</span>
-      <span class="pop-title">${esc(person.title)}</span>
+      <span class="pop-head"><span class="pop-avatar" aria-hidden="true">${face(person)}</span><span class="pop-who"><span class="pop-name">${esc(person.name)}</span><span class="pop-title">${esc(person.title)}</span></span></span>
       <span class="pop-quote">${esc(person.quote)}</span>
       <span class="pop-label">Hard lines</span>
       ${person.hard_lines.map((h) => `<span class="pop-line">${esc(h)}</span>`).join("")}
@@ -584,10 +583,15 @@ th { font: 500 11px var(--font-body); letter-spacing: .06em; text-transform: upp
 .ref > a { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--seat) 70%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
 .ref > a:hover { color: var(--accent); }
 .avatar-ref > a { text-decoration: none; }
-.pop { display: none; position: absolute; z-index: 10; top: calc(100% + 6px); left: 0; width: min(320px, 80vw); background: var(--card); border: 1px solid var(--rule-2); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.16); font: 400 13.5px/1.45 var(--font-body); color: var(--ink); text-align: left; text-transform: none; letter-spacing: 0; }
-.ref:hover .pop, .ref:focus-within .pop { display: block; }
+.pop { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: min(320px, 80vw); background: var(--card); border: 1px solid var(--rule-2); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.16); font: 400 13.5px/1.45 var(--font-body); color: var(--ink); text-align: left; text-transform: none; letter-spacing: 0; }
+/* Keyboard focus keeps the card open. Mouse focus does not, so the card clears after a dialog returns focus to the name. */
+.ref:hover .pop, .ref:has(:focus-visible) .pop { display: block; }
 .pop-body { display: grid; gap: 4px; padding: 14px; }
 .pop-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pop-head { display: flex; align-items: center; gap: 10px; }
+.pop-avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; }
+.pop-avatar svg { display: block; width: 100%; height: 100%; }
+.pop-who { display: grid; gap: 2px; min-width: 0; }
 .pop-name { font: 600 16px var(--font-display); }
 .pop-title { color: var(--ink-2); }
 .pop-quote { font-weight: 500; border-left: 2px solid var(--seat); padding-left: 10px; margin: 8px 0; }
@@ -699,6 +703,32 @@ const ORG_SCRIPT = `<script>
 </script>`;
 
 // One run shows at a time. The page hash names the run, and the newest run shows when the hash names none.
+// The hover card uses fixed positioning, so no row that clips its overflow can hide it.
+// It opens below the name, or above when the window has no room below, and stays inside the window.
+const POP_SCRIPT = `<script>
+(() => {
+  const place = (ref) => {
+    const pop = ref.querySelector(":scope > .pop");
+    if (!pop) return;
+    const anchor = ref.getBoundingClientRect();
+    const gap = 6, margin = 8;
+    const width = pop.offsetWidth, height = pop.offsetHeight;
+    const below = anchor.bottom + gap;
+    const above = anchor.top - gap - height;
+    const top = below + height <= innerHeight - margin ? below : above >= margin ? above : Math.max(margin, innerHeight - height - margin);
+    const left = Math.min(Math.max(margin, anchor.left), innerWidth - width - margin);
+    pop.style.top = top + "px";
+    pop.style.left = left + "px";
+  };
+  const onEnter = (event) => {
+    const ref = event.target.closest && event.target.closest(".ref");
+    if (ref) requestAnimationFrame(() => place(ref));
+  };
+  document.addEventListener("mouseover", onEnter);
+  document.addEventListener("focusin", onEnter);
+})();
+</script>`;
+
 const RUN_SCRIPT = `<script>
 (() => {
   const runs = [...document.querySelectorAll(".run")];
@@ -727,6 +757,7 @@ function fragment(runs: Run[], orgs: Org[], imgDir: ImgDir): string {
 ${FAVICON}
 ${FONTS}
 <style>${STYLE}${CARD_CSS}</style>
+${avatarSprite(orgs.flatMap((o) => o.people))}
 <div class="shell" id="top">
   ${sidebar(navGroup(runs), peopleNav(orgs))}
   <main class="content"><div class="content-inner">
@@ -743,6 +774,7 @@ ${orgs.map(bundleScript).join("\n")}
 ${COPY_SCRIPT}
 ${PERSON_SCRIPT}
 ${RUN_SCRIPT}
+${POP_SCRIPT}
 ${ORG_SCRIPT}`;
 }
 
@@ -755,6 +787,7 @@ function shareFragment(run: Run): string {
 ${FAVICON}
 ${FONTS}
 <style>${STYLE}${CARD_CSS}${SHARE_CSS}</style>
+${avatarSprite(org.people)}
 <main class="content share"><div class="content-inner">
   <header class="masthead">${LOGO}</header>
   ${runSection(run, (r) => `briefs/${r.brief?.id ?? ""}/prototype/`)}
@@ -765,7 +798,8 @@ ${FONTS}
 </dialog>
 ${templates([org])}
 ${PERSON_SCRIPT}
-${RUN_SCRIPT}`;
+${RUN_SCRIPT}
+${POP_SCRIPT}`;
 }
 
 const SHARE_CSS = `

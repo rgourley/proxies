@@ -225,19 +225,27 @@ function top(p: AvatarParts): string {
   }
 }
 
-// The same person can appear many times on one page, so the caller passes an instance id that makes each filter id unique.
-// The circle comes from CSS border-radius, so no clip id is needed.
-export function avatarSvg(input: AvatarInput, size: number, instance: string): string {
+// The drawing inside the avatar. The filter id must be unique on the page.
+function drawing(input: AvatarInput, filterId: string): string {
   const p = avatarParts(input);
-  const id = `g${hash(input.seed).toString(36)}${instance}`;
   const flip = p.facing === "right" ? ` transform="translate(100 0) scale(-1 1)"` : "";
   const neck = `<rect x="45" y="46" width="10" height="16" fill="${p.face}" opacity=".85"/>`;
   const head = `<path d="M40 30 Q40 20 50 19 Q60 20 60 30 L60 45 Q55 49 47 47 L44 44 L38 41 L41 37 L39 35 Z" fill="${p.face}"/>`;
   // The outer transform crops the figure to head and shoulders, so it reads at small sizes.
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" style="border-radius:50%;overflow:hidden" role="img" aria-hidden="true">
-<defs><filter id="${id}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="${hash(input.seed) % 997}"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .09 0"/><feComposite in2="SourceGraphic" operator="in"/></filter></defs>
-<g><rect width="100" height="100" fill="${BACKGROUND}"/>
+  return `<defs><filter id="${filterId}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="${hash(input.seed) % 997}"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .09 0"/><feComposite in2="SourceGraphic" operator="in"/></filter></defs>
+<rect width="100" height="100" fill="${BACKGROUND}"/>
 <g transform="translate(50 53) scale(1.4) translate(-50 -46)"><g${flip}>${hairBehind(p)}${top(p)}${neck}${head}${facialHair(p)}${hairFront(p)}${glasses(p)}</g></g>
-<rect width="100" height="100" filter="url(#${id})"/></g>
-</svg>`;
+<rect width="100" height="100" filter="url(#${filterId})"/>`;
+}
+
+// A standalone avatar, for files and previews. The instance makes its filter id unique when several share a page.
+// The circle comes from CSS border-radius, so no clip id is needed.
+export function avatarSvg(input: AvatarInput, size: number, instance: string): string {
+  const id = `g${hash(input.seed).toString(36)}${instance}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" style="border-radius:50%;overflow:hidden" role="img" aria-hidden="true">${drawing(input, id)}</svg>`;
+}
+
+// One reusable avatar for a page. Every place that shows the person points at this symbol with <use>.
+export function avatarSymbol(input: AvatarInput, id: string): string {
+  return `<symbol id="${id}" viewBox="0 0 100 100">${drawing(input, `${id}-grain`)}</symbol>`;
 }
