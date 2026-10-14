@@ -4,7 +4,7 @@ Three of six would stop it. The other three want changes first.
 
 - **Sam** (veto holder) blocks because a forwardable 30-day link and a summary built from internal comments put Fernhill's private notes in front of people nobody invited, and removing a guest doesn't stop it.
 - **Ken** (approver) blocks because the weekly summary sends internal comments to clients, and support can't see what a guest sees, so the first bad week becomes escalations he can't answer.
-- **Theo** blocks because the AI summary repeats things a guest isn't allowed to see. That breaks the one rule he holds for every AI feature.
+- **Theo** blocks because the AI summary repeats things a guest isn't allowed to see. That breaks the one rule they hold for every AI feature.
 
 ## Findings, ranked
 
