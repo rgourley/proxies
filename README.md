@@ -55,7 +55,7 @@ Flags for the run commands:
 | `--with a,b,c` | Invite exactly these people. Overrides `--use` |
 | `--dissenter <handle>` | This person holds their position unless someone answers their block |
 | `--no-decision` | End a meeting after the rebuttals, with no decision round |
-| `--wordy` | Remove the word limits, so each person writes at full length |
+| `--wordy` | Drop the word targets, so each person writes at full length |
 | `--noui` | Show the results in chat and do not open the page |
 
 After a run, the results page opens by default. Chat shows only the verdict and the run folder.
@@ -104,7 +104,7 @@ To read a run:
 2. Check the avatars under the title. The dot on each one is that person's verdict: red is Block, amber is Rework, green is Ship.
 3. Hover **Reviewed** to see what they reviewed. Hover **Context** to see the docs every person read first.
 4. If the run reviewed screens, open **Screens they reviewed** and click any thumbnail to see it full size.
-5. Read the summary: who blocks and why, the ranked findings with severity tags and who raised each one, and the fixes that clear the most blocks.
+5. Read the summary: who blocks and why, the ranked findings with severity tags and who raised each one, and what to fix first.
 6. Scroll down for each person's full response, blocks first.
 
 To look at the people:

@@ -23,7 +23,7 @@ Three of six would stop it. The other three want changes first.
 | 11 | A guest who already has a Tilt login is added with no notice | Medium | Ken |
 | 12 | There's no number that says the feature worked | Medium | Jo |
 
-## Fixes that clear the most
+## What to fix first
 
 1. **Write the guest summary from guest-visible activity only**, or leave guests off the summary until it can be. (All 6)
 2. **Add a workspace-wide guest list** with who invited each guest, when, and what they can see, and a remove button. (Ana, Jo, Ken, Rita)
