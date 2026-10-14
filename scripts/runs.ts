@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { COPY_SCRIPT, DECISION_LABEL, FAVICON, PERSON_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, initials, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
-import type { Org, Person } from "./lib.ts";
+import type { Frontmatter, Org, Person } from "./lib.ts";
 import { orgBundle } from "./bundle.ts";
 import { card, CARD_CSS } from "./card.ts";
 
@@ -44,7 +44,7 @@ type BriefSource = { title: string; url: string };
 
 type Brief = { id: string; name: string; sources: BriefSource[] };
 
-type Round = { id: string; label: string; outputs: Output[] };
+type Round = { id: string; label: string; note: string; outputs: Output[] };
 
 type Run = {
   id: string;
@@ -59,18 +59,53 @@ type Run = {
   source: { url: string; label: string } | null;
   brief: Brief | null;
   attendees: Person[];
-  summaries: { file: string; markdown: string }[];
+  summaries: { label: string; markdown: string }[];
+  ownerDecision: { person: Person; markdown: string } | null;
   rounds: Round[];
 };
 
 const OUT_LOCAL = join(ROOT, "runs.html");
 const OUT_ARTIFACT = join(ROOT, "runs.artifact.html");
 
-// The facilitator writes one of these per run. They show first, in this order.
-const SUMMARY_FILES = ["decision.md", "findings.md", "delta.md", "result.md", "cheatsheet.md", "03-decision.md"];
+// The facilitator writes one of these per run. They show first, in this order, under a plain label.
+const SUMMARY_FILES: readonly { file: string; label: string }[] = [
+  { file: "decision.md", label: "Summary" },
+  { file: "findings.md", label: "Findings" },
+  { file: "delta.md", label: "What changed" },
+  { file: "result.md", label: "Result" },
+  { file: "cheatsheet.md", label: "Cheat sheet" },
+];
 
-function roundLabel(folder: string): string {
-  return folder.replace(/^\d+-/, "").replace(/-/g, " ");
+// The decision owner writes this file in the first person, so the page names the owner above it.
+const OWNER_DECISION_FILE = "03-decision.md";
+
+// The owner is the "owner" handle in meta.md. A run without that field uses the attendee whose decision level is owner.
+function ownerOf(fields: Frontmatter, attendees: Person[], org: Org, metaFile: string): Person | null {
+  const handle = fields.get("owner");
+  if (typeof handle === "string") return findPerson(org, handle, metaFile);
+  return attendees.find((p) => p.decision === "owner") ?? null;
+}
+
+function readOwnerDecision(dir: string, owner: Person | null, metaFile: string): { person: Person; markdown: string } | null {
+  const file = join(dir, OWNER_DECISION_FILE);
+  if (!existsSync(file)) return null;
+  if (!owner) throw new Error(`${OWNER_DECISION_FILE} exists but no decision owner is set. Add "owner" to ${metaFile}`);
+  return { person: owner, markdown: readFileSync(file, "utf8") };
+}
+
+// Each round folder gets a plain name and one line that explains what the people did in that round.
+const ROUND_NAMES: ReadonlyMap<string, { label: string; note: string }> = new Map([
+  ["blind", { label: "First take", note: "Each person reviewed it alone, before they read anyone else." }],
+  ["rebuttal", { label: "Response to the room", note: "Each person read every first take, then said who they agree with, who they push back on, and whether they changed their mind." }],
+  ["attacks", { label: "Ways it breaks", note: "Each person tried to break it from their own seat." }],
+  ["prep", { label: "Questions to expect", note: "Each person's top questions for the real meeting, and the answers that satisfy them." }],
+  ["followup", { label: "Did the revision answer them", note: "Each person checked their earlier objections against the new version." }],
+  ["compare", { label: "Which version they pick", note: "Each person saw both versions in a random order and picked one." }],
+]);
+
+function roundName(folder: string): { label: string; note: string } {
+  const key = folder.replace(/^\d+-/, "");
+  return ROUND_NAMES.get(key) ?? { label: key.replace(/-/g, " "), note: "" };
 }
 
 function findPerson(org: Org, handle: string, where: string): Person {
@@ -123,13 +158,14 @@ function readRun(id: string, orgs: Org[]): Run {
   const orgId = text(fields, "org", metaFile);
   const org = orgs.find((o) => o.id === orgId);
   if (!org) throw new Error(`Run ${id} names unknown org "${orgId}"`);
-  const summaries = SUMMARY_FILES.filter((f) => existsSync(join(dir, f))).map((f) => ({ file: f, markdown: readFileSync(join(dir, f), "utf8") }));
+  const summaries = SUMMARY_FILES.filter((s) => existsSync(join(dir, s.file))).map((s) => ({ label: s.label, markdown: readFileSync(join(dir, s.file), "utf8") }));
+  const attendees = list(fields, "attendees", metaFile).map((h) => findPerson(org, h, metaFile));
   const rounds = readdirSync(dir)
     .filter((f) => /^\d+-/.test(f) && statSync(join(dir, f)).isDirectory())
     .sort()
     .map((folder) => ({
       id: folder,
-      label: roundLabel(folder),
+      ...roundName(folder),
       outputs: readdirSync(join(dir, folder))
         .filter((f) => f.endsWith(".md"))
         .map((f) => readOutput(findPerson(org, f.replace(/\.md$/, ""), `${id}/${folder}`), readFileSync(join(dir, folder, f), "utf8")))
@@ -147,8 +183,9 @@ function readRun(id: string, orgs: Org[]): Run {
     artifactSource: readArtifact(dir, text(fields, "artifact", metaFile)),
     source: sourceOf(fields, metaFile),
     brief: typeof fields.get("brief") === "string" ? readBrief(String(fields.get("brief"))) : null,
-    attendees: list(fields, "attendees", metaFile).map((h) => findPerson(org, h, metaFile)),
+    attendees,
     summaries,
+    ownerDecision: readOwnerDecision(dir, ownerOf(fields, attendees, org, metaFile), metaFile),
     rounds,
   };
 }
@@ -269,10 +306,70 @@ function output(item: Output, org: Org): string {
   </details>`;
 }
 
-function tally(round: Round): string {
+function tallyPills(round: Round): string {
   const counts = VERDICT_ORDER.map((v) => [v, round.outputs.filter((o) => o.verdict === v).length] as const).filter(([, n]) => n > 0);
-  if (counts.length === 0) return "";
-  return `<p class="verdict-tally">${counts.map(([v, n]) => `<span class="verdict v-${v}"><span class="pill-dot" aria-hidden="true"></span>${n} ${VERDICT_LABEL.get(v)}</span>`).join("")}</p>`;
+  return counts.map(([v, n]) => `<span class="verdict v-${v}"><span class="pill-dot" aria-hidden="true"></span>${n} ${VERDICT_LABEL.get(v)}</span>`).join("");
+}
+
+function tally(round: Round): string {
+  const pills = tallyPills(round);
+  return pills ? `<p class="verdict-tally">${pills}</p>` : "";
+}
+
+// A thread is one person's responses across every round of a run, in round order.
+type Thread = { person: Person; steps: { round: Round; output: Output }[] };
+
+function threads(run: Run): Thread[] {
+  const byHandle = new Map<string, Thread>();
+  for (const round of run.rounds) {
+    for (const o of round.outputs) {
+      const prior = byHandle.get(o.person.handle);
+      byHandle.set(o.person.handle, { person: o.person, steps: [...(prior?.steps ?? []), { round, output: o }] });
+    }
+  }
+  const latest = (t: Thread): Output => t.steps[t.steps.length - 1].output;
+  return [...byHandle.values()].sort((a, b) => verdictRank(latest(a)) - verdictRank(latest(b)) || a.person.name.localeCompare(b.person.name));
+}
+
+function verdictWord(verdict: Verdict | null): string {
+  return verdict ? VERDICT_LABEL.get(verdict) ?? "" : "No verdict";
+}
+
+// The row shows the verdict in each round, so a reader sees who changed position without opening it.
+function thread(t: Thread, org: Org): string {
+  const p = t.person;
+  const latest = t.steps[t.steps.length - 1].output.verdict;
+  const changed = new Set(t.steps.map((s) => s.output.verdict)).size > 1;
+  const path = t.steps
+    .map((s) => `<span class="verdict-text ${s.output.verdict ? `v-${s.output.verdict}` : ""}" title="${esc(s.round.label)}">${esc(verdictWord(s.output.verdict))}</span>`)
+    .join(`<span class="arrow" aria-hidden="true">→</span>`);
+  return `<details class="output thread" style="--seat:${seatColor(p.seat)}">
+    <summary>
+      <span class="status-icon ${latest ? `v-${latest}` : ""}" aria-hidden="true"></span>
+      <span class="mono" aria-hidden="true">${esc(initials(p.name))}</span>
+      <span class="out-who">${mention(p, esc(p.name))}<span class="out-title">${esc(p.title)}</span></span>
+      ${changed ? `<span class="moved">Changed</span>` : ""}
+      <span class="thread-path">${path}</span>
+    </summary>
+    ${t.steps.map((s) => `<div class="step"><p class="step-label">${esc(s.round.label)}</p>${s.round.note ? `<p class="step-note">${esc(s.round.note)}</p>` : ""}<div class="md">${markdown(stripTitleLine(s.output.markdown), org)}</div></div>`).join("\n")}
+  </details>`;
+}
+
+function ownerDecisionBlock(d: { person: Person; markdown: string }, org: Org): string {
+  const p = d.person;
+  return `<article class="summary owner-decision" style="--seat:${seatColor(p.seat)}">
+    <p class="owner-by"><span class="mono" aria-hidden="true">${esc(initials(p.name))}</span><span>Decision, written by ${mention(p, esc(p.name))}, ${esc(p.title)}</span></p>
+    <div class="md">${markdown(stripTitleLine(d.markdown), org)}</div>
+  </article>`;
+}
+
+function threadSection(run: Run): string {
+  const people = threads(run);
+  const order = run.rounds.map((r) => r.label).join(", then ");
+  return `<section class="round"><h3 class="round-label">Each person's view<span>${people.length} people</span></h3>
+  <p class="round-note">${esc(order)}. Open a person to read their rounds in order.</p>
+  ${run.rounds.map((r) => `<p class="verdict-tally"><span class="tally-label">${esc(r.label)}</span>${tallyPills(r)}</p>`).join("\n")}
+  <div class="list">${people.map((t) => thread(t, run.org)).join("\n")}</div></section>`;
 }
 
 // The overview chip names the reviewed doc and its source. Hover or focus shows the doc's first note and its diagram.
@@ -346,6 +443,18 @@ function gallery(run: Run, imgDir: ImgDir): string {
 </details>`;
 }
 
+// A run is in progress until the facilitator writes its summary or the owner writes the decision.
+function inProgress(run: Run): boolean {
+  return run.summaries.length === 0 && run.ownerDecision === null;
+}
+
+function progressBanner(run: Run): string {
+  const round = run.rounds[run.rounds.length - 1];
+  const answered = round ? round.outputs.length : 0;
+  const stage = round ? ` in ${round.label.toLowerCase()}` : "";
+  return `<p class="in-progress" role="status"><span class="spinner" aria-hidden="true"></span>In progress. ${answered} of ${run.attendees.length} people have answered${esc(stage)}. The summary appears here when the run finishes.</p>`;
+}
+
 function runSection(run: Run, imgDir: ImgDir): string {
   return `<section class="run" id="${esc(run.id)}">
   <header class="run-head">
@@ -358,10 +467,12 @@ function runSection(run: Run, imgDir: ImgDir): string {
     </div>
   </header>
   ${gallery(run, imgDir)}
+  ${inProgress(run) ? progressBanner(run) : ""}
   <div class="run-main">
-  ${run.summaries.map((s) => `<article class="summary"><p class="file">${esc(s.file)}</p><div class="md">${markdown(s.markdown, run.org)}</div></article>`).join("\n")}
-  ${run.rounds
-    .map((r) => `<section class="round"><h3 class="round-label">${esc(r.label)}<span>${r.outputs.length} ${r.outputs.length === 1 ? "response" : "responses"}</span></h3>${tally(r)}<div class="list">${r.outputs.map((o) => output(o, run.org)).join("\n")}</div></section>`)
+  ${run.summaries.map((s) => `<article class="summary"><p class="file">${esc(s.label)}</p><div class="md">${markdown(s.markdown, run.org)}</div></article>`).join("\n")}
+  ${run.ownerDecision ? ownerDecisionBlock(run.ownerDecision, run.org) : ""}
+  ${run.rounds.length > 1 ? threadSection(run) : run.rounds
+    .map((r) => `<section class="round"><h3 class="round-label">${esc(r.label)}<span>${r.outputs.length} ${r.outputs.length === 1 ? "response" : "responses"}</span></h3>${r.note ? `<p class="round-note">${esc(r.note)}</p>` : ""}${tally(r)}<div class="list">${r.outputs.map((o) => output(o, run.org)).join("\n")}</div></section>`)
     .join("\n")}
   </div>
 </section>`;
@@ -374,6 +485,10 @@ const STYLE = `${TOKENS}
 .run-head .page-title { font-size: 26px; text-wrap: balance; }
 .run-main { min-width: 0; max-width: 960px; }
 pre.code { background: var(--panel); border-radius: 6px; padding: 12px; overflow-x: auto; font: 12.5px/1.5 var(--font-mono); }
+.in-progress { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; padding: 12px 14px; border: 1px solid var(--rule-2); border-radius: 8px; background: var(--panel); font-size: 14px; color: var(--ink-2); }
+.spinner { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--rule-2); border-top-color: var(--accent); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 .run-head { display: grid; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
 .eyebrow { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font: 12.5px var(--font-mono); color: var(--muted); }
 .verb { font: 500 11.5px var(--font-body); padding: 2px 8px; border-radius: 4px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); text-transform: capitalize; }
@@ -400,10 +515,24 @@ pre.code { background: var(--panel); border-radius: 6px; padding: 12px; overflow
 .summary .md { font-size: 15px; line-height: 1.65; }
 .summary .md h3 { margin-top: 28px; font: 600 18px/1.3 var(--font-display); letter-spacing: -0.01em; }
 .summary .md h3:first-child { margin-top: 0; }
-.file { margin: 0 0 12px; font: 12px var(--font-mono); color: var(--muted); }
+.file { margin: 0 0 12px; font: 600 12px var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.owner-decision { margin-top: 28px; padding: 16px 20px 12px; border: 1px solid var(--rule-2); border-left: 3px solid var(--seat); border-radius: 8px; background: var(--card); }
+.owner-by { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font: 500 13.5px var(--font-body); color: var(--ink-2); }
 .round { margin-top: 32px; display: grid; gap: 10px; }
-.round-label { margin: 0; font: 600 13px var(--font-body); color: var(--ink); display: flex; gap: 8px; align-items: baseline; text-transform: capitalize; }
+.round-label { margin: 0; font: 600 13px var(--font-body); color: var(--ink); display: flex; gap: 8px; align-items: baseline; }
 .round-label span { font: 12.5px var(--font-body); color: var(--muted); text-transform: none; }
+.round-note { margin: -4px 0 0; font-size: 13.5px; color: var(--ink-2); }
+.tally-label { flex: none; min-width: 168px; font: 500 12.5px var(--font-body); color: var(--ink-2); align-self: center; }
+.thread-path { flex: none; display: flex; align-items: center; gap: 6px; }
+.thread-path .verdict-text { width: auto; }
+.thread-path .arrow { color: var(--muted); font-size: 12px; }
+.moved { flex: none; font: 500 11.5px var(--font-body); padding: 1px 7px; border-radius: 4px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.thread .step { padding: 4px 12px 8px 70px; max-width: 80ch; }
+.thread .step + .step { border-top: 1px dashed var(--rule); }
+.step-label { margin: 14px 0 2px; font: 600 13px var(--font-body); color: var(--ink); }
+.step-note { margin: 0 0 6px; font-size: 12.5px; color: var(--muted); }
+.thread .step .md { padding: 0; }
+@media (max-width: 640px) { .thread .step { padding-left: 12px; } .tally-label { min-width: 0; width: 100%; } .out-title { display: none; } }
 .list { border-top: 1px solid var(--rule); }
 .output { border-bottom: 1px solid var(--rule); }
 .output summary { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px; cursor: pointer; list-style: none; border-radius: 6px; }
@@ -631,7 +760,9 @@ function main(): void {
   const local = only === null ? OUT_LOCAL : OUT_LOCAL.replace(/\.html$/, `.${only}.html`);
   const artifact = only === null ? OUT_ARTIFACT : OUT_ARTIFACT.replace(/\.artifact\.html$/, `.${only}.artifact.html`);
   // The local page reads screenshots from the brief folder. The artifact publishes them under screens/.
-  writeFileSync(local, localDocument(fragment(runs, orgs, (run) => `briefs/${run.brief?.id ?? ""}/prototype/`)));
+  // While a run is in progress, the local page reloads itself so new answers appear without a manual refresh.
+  const page = localDocument(fragment(runs, orgs, (run) => `briefs/${run.brief?.id ?? ""}/prototype/`));
+  writeFileSync(local, runs.some(inProgress) ? page.replace("<head>", `<head><meta http-equiv="refresh" content="15">`) : page);
   writeFileSync(artifact, fragment(runs, orgs, () => "screens/"));
   console.log(`Wrote ${basename(local)} and ${basename(artifact)}: ${runs.length} runs`);
 }

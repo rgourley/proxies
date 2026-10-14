@@ -15,6 +15,7 @@ Everything a person reads is plain business English: proxy output, summaries, fi
 - Name steps and screens in words, such as "the invite screen" or "when someone revokes a user". Never use diagram node letters or IDs.
 - Explain acronyms the first time they appear.
 - When you summarize, restate each finding as the problem and its effect on the business. Do not copy a proxy's shorthand.
+- Summary files and the page show only what the org and its people said and decided. Do not write about this tool, run settings, flags, format changes, bugs, or comparisons with other runs. Tell the user those things in chat.
 
 ## Resolve the org
 1. If `--org <id>` is present, use it.
@@ -42,7 +43,7 @@ TRANSCRIPTS (rebuttal and decision rounds only)
 <other proxies' output, each under "## <name> (<pronouns>), <title> said:">
 ```
 
-The formats set word limits. With `--wordy`, delete each word-limit sentence from the FORMAT block. Those sentences start with "At most" or "Each breakage is at most". Also with `--wordy`, the owner in meeting round 3 gets every round 1 review in full.
+The formats set word targets. With `--wordy`, delete each word-target sentence from the FORMAT block. Those sentences start with "Aim for about". Also with `--wordy`, the owner in meeting round 3 gets every round 1 review in full.
 
 If `--dissenter <handle>` is present, add this line to that proxy's PERSON block: "You are the designated dissenter. Hold your position unless someone directly answers your block condition."
 
@@ -90,7 +91,7 @@ Follow `formats/meeting.md`.
 - Write `decision.md` yourself: the question, a table of each proxy's round 1 and round 2 position, the owner's decision, open vetoes, required changes, and the minority report. Quote and cite file paths for every claim.
 
 ### redteam <artifact...> "<scenario>"
-Follow `formats/redteam.md`. Outputs go to `01-attacks/<handle>.md`. Write `findings.md` yourself, ranked, with attribution.
+Follow `formats/redteam.md`. Outputs go to `01-attacks/<handle>.md`. Write `findings.md` yourself, ranked, with attribution. End it with a section named "What to fix first": the fixes that answer the most findings and blocks, each with the people who raised it.
 
 ### ask <handle> "<question>" [artifact...]
 Run one proxy with `formats/ask.md`. Print the answer. Save it to `runs/<date>-<org>-ask-<handle>/answer.md`.
@@ -136,6 +137,7 @@ An org with no URL yet gets a new artifact. Add its URL to that file. Never publ
 ## Report back
 The page is the default place for results. This applies to `meeting`, `redteam`, `prep`, `followup`, and `compare`. It does not apply to `ask` and `talk`, which answer in chat.
 - While a run is in progress, do not report each proxy or each round in chat. Wait until the run is complete.
+- When you write `meta.md`, run `node scripts/runs.ts --org <org>` and open `runs.<org>.html` with `open`. The page shows the run as in progress and reloads itself. Run the script again after each proxy answers, so the count goes up.
 - After the run, run `node scripts/runs.ts --org <org>` and open `runs.<org>.html` with `open`. Then republish that org's page, as in `pages`, if the org has a URL in `.claude/pages.local.md`.
 - In chat, write only the verdict line, the run folder path, and any assumption that you made in the artifact. Do not repeat the summary that the page shows.
 - With `--noui`, do not open the page. Show the decision or findings summary and the run folder path in chat. Still rebuild the page files.
