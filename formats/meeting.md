@@ -23,7 +23,7 @@ Each proxy writes:
 A proxy does not change position because others disagree. It changes only when someone answers its block condition.
 
 ## Round 3: decision
-Run the person with `decision: owner` once more. They get both rounds.
+Run the decision owner once more. They get both rounds. The decision owner is the `owner` handle in the run's `meta.md`.
 
 They write:
 - **Decision**: ship, ship with changes, rework, or stop.

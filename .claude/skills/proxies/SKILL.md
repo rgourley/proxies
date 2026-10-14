@@ -66,6 +66,7 @@ brief: <brief id, if the run uses one>
 nav: <same as title>
 title: <what was reviewed, under 40 characters, e.g. "Prototype: guest sharing" or "Pricing page v2". Name the artifact, not the run type or the people. The page shows those already. Two runs must never share a title>
 artifact: input/<first artifact file>
+owner: <handle of the decision owner, for meeting runs>
 attendees:
   - <handle>
 ---
@@ -80,6 +81,7 @@ Write `<org>` to `.active-org`. Print the org tagline and a table of handle, nam
 
 ### meeting <artifact...> "<question>"
 Follow `formats/meeting.md`.
+- Before round 1, set `owner` in `meta.md`. If one attendee has `decision: owner`, use that person. If more than one does, use the decision rights in `org.md` to choose the one who owns this question, and tell the user which one you chose. If no attendee is an owner, stop and ask the user.
 - Round 1 → `01-blind/<handle>.md`
 - Round 2 → `02-rebuttal/<handle>.md`
 - Round 3 (skip with `--no-decision`) → `03-decision.md`
@@ -107,7 +109,7 @@ Follow `formats/followup.md`. Read `<run-folder>/decision.md` for the original q
 Follow `formats/compare.md`. Copy the files to `input/a.*` and `input/b.*`. For each proxy, flip a coin to decide which file it sees as "A". Record the mapping in `mapping.md`. Outputs go to `01-compare/<handle>.md`. Write `result.md` yourself: un-flip each pick to the real file, then a tally, then each proxy's reason and what it would take from the other version.
 
 ### calibrate <handle> ["<what the real person said>"] [--run <run-folder>]
-Follow `formats/calibrate.md`. You do this yourself. Do not launch a subagent. If the user gave no quote, ask for it. If `--run` is given, read that proxy's output files from the run. Show the proposed edits as a diff. After The user approves, edit the person file and append the entry to `orgs/<org>/calibration/<handle>.md`.
+Follow `formats/calibrate.md`. You do this yourself. Do not launch a subagent. If the user gave no quote, ask for it. If `--run` is given, read that proxy's output files from the run. Show the proposed edits as a diff. After the user approves, edit the person file and append the entry to `orgs/<org>/calibration/<handle>.md`.
 
 ### clone <handle> --to <org>
 Copy `orgs/<active-org>/people/<handle>.md` into the target org. Keep the seat, voice, and blind spots. Rewrite title, reports_to, tenure, measured_on, hard_lines, quote, and the body to fit the target `org.md`. If the target org already has that handle, stop and ask for a new handle. Show the draft before you write it.
