@@ -87,6 +87,8 @@ Each person has a `decision` level: `owner` decides, `veto` can block, `approve`
 
 When the real person would have said something different, run `/proxies calibrate dana "what they actually said"`. Claude proposes edits to their file and logs the change.
 
+Each person gets a generated avatar in the style of the Proxies illustration. Their pronouns choose the hair and clothes, and the same person always gets the same avatar. To set it yourself, add any of these to the person file: `avatar_hair` (bob, bun, ponytail, long, short, curls, scarf, side, buzz, bald, receding, quiff), `avatar_top` (blazer, suit, turtleneck, vneck, dress), `avatar_facial_hair` (none, beard, mustache, stubble), and `avatar_glasses` (none, round, square). To get a different random avatar, add `avatar_seed` with any text.
+
 ## The results page
 
 The page opens on its own after every run. To build and open it by hand:

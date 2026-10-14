@@ -1,4 +1,6 @@
 // Shared parsing and page parts for the cards page and the runs page.
+import { avatarSvg } from "./avatar.ts";
+import type { AvatarInput } from "./avatar.ts";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -23,6 +25,7 @@ export type Person = {
   blind_spots: string[];
   uses: string[];
   sections: Section[];
+  avatar: AvatarInput;
 };
 
 export type UseCase = { id: string; label: string };
@@ -135,8 +138,15 @@ function sections(body: string): Section[] {
     });
 }
 
+function optionalText(fields: Frontmatter, key: string): string | null {
+  const value = fields.get(key);
+  return typeof value === "string" ? value : null;
+}
+
 function readPerson(file: string): Person {
   const { fields, body } = parse(readFileSync(file, "utf8"), file);
+  const org = text(fields, "org", file);
+  const handle = text(fields, "handle", file);
   return {
     handle: text(fields, "handle", file),
     name: text(fields, "name", file),
@@ -154,6 +164,14 @@ function readPerson(file: string): Person {
     blind_spots: list(fields, "blind_spots", file),
     uses: optionalList(fields, "uses", file),
     sections: sections(body),
+    avatar: {
+      seed: optionalText(fields, "avatar_seed") ?? `${org}/${handle}`,
+      pronouns: text(fields, "pronouns", file),
+      hair: optionalText(fields, "avatar_hair"),
+      top: optionalText(fields, "avatar_top"),
+      facialHair: optionalText(fields, "avatar_facial_hair"),
+      glasses: optionalText(fields, "avatar_glasses"),
+    },
   };
 }
 
@@ -187,11 +205,12 @@ export function esc(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// A single-word name uses its first two letters, so "Adam" and "Alex" get different monograms.
-export function initials(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  const letters = parts.length === 1 ? parts[0].slice(0, 2) : parts.map((part) => part[0]).join("");
-  return letters.slice(0, 2).toUpperCase();
+// Every person shows as a generated avatar. The SVG scales to the size of its container.
+// The counter gives each copy on the page its own filter id.
+let faceCount = 0;
+export function face(person: Person): string {
+  faceCount += 1;
+  return avatarSvg(person.avatar, 100, `i${faceCount}`);
 }
 
 export function seatLabel(seat: string): string {
@@ -207,7 +226,10 @@ export function cardId(person: Person): string {
 }
 
 export const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;800&family=Geist+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@1,400&display=swap">`;
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;800&family=Geist+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@1,400&family=Young+Serif&display=swap">`;
+
+// The logo is the wordmark in Young Serif with a red dot. The text takes the page's ink color, so it reads in both themes.
+export const LOGO = `<svg class="logo" viewBox="0 0 300 90" role="img" aria-label="Proxies"><text x="4" y="70" font-family="'Young Serif', Georgia, serif" font-size="68" letter-spacing="-1" fill="currentColor">Proxies</text><circle cx="268" cy="27" r="7" fill="#ee4b2b"/></svg>`;
 
 // Labels name the person's standing in the org, not anything they did in a run.
 export const DECISION_LABEL: ReadonlyMap<Decision, string> = new Map([
@@ -276,7 +298,7 @@ code { font: 12.5px var(--font-mono); background: var(--panel); padding: 2px 6px
 .brand-icon { display: grid; place-items: center; color: var(--ink-2); }
 .brand-name { font: 600 15px/1 var(--font-display); }
 .masthead { padding-bottom: 28px; }
-.wordmark { font: 800 22px/1 var(--font-display); letter-spacing: -.045em; color: var(--ink); }
+.logo { display: block; height: 34px; width: auto; color: var(--ink); }
 .icon { flex: none; }
 .shell.collapsed { grid-template-columns: minmax(0, 1fr) 60px; }
 .shell.collapsed .side { padding-inline: 12px; }

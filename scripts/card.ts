@@ -1,5 +1,5 @@
 // One persona card. The runs page shows a card in a modal when a viewer clicks a person.
-import { cardId, copyButton, decisionPill, esc, initials, seatColor } from "./lib.ts";
+import { cardId, copyButton, decisionPill, esc, face, seatColor } from "./lib.ts";
 import type { Person, Section, UseCase } from "./lib.ts";
 
 function listBlock(label: string, kind: string, items: string[]): string {
@@ -23,7 +23,7 @@ export function card(person: Person, useCases: UseCase[]): string {
   <div class="card-cols">
   <div class="card-id">
   <header class="card-head">
-    <div class="avatar" aria-hidden="true">${esc(initials(person.name))}</div>
+    <div class="card-avatar" aria-hidden="true">${face(person)}</div>
     <div class="who">
       <h3>${esc(person.name)} <span class="pronouns">${esc(person.pronouns)}</span></h3>
       <p class="title">${esc(person.title)}</p>
@@ -64,7 +64,8 @@ export const CARD_CSS = `
 .band .pill.d-owner { background: #fff; color: var(--seat); border-color: #fff; }
 .band .pill.d-veto { background: rgba(0,0,0,.28); border-color: transparent; }
 .card-head { display: flex; align-items: center; gap: 14px; }
-.avatar { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); color: var(--ink-2); font: 600 18px var(--font-display); border: 1px solid var(--rule-2); }
+.card-avatar { flex: none; width: 96px; height: 96px; border-radius: 50%; display: block; }
+.card-avatar svg { display: block; width: 100%; height: 100%; }
 .who { flex: 1; min-width: 0; }
 .who h3 { margin: 0; font: 600 24px/1.15 var(--font-display); letter-spacing: -0.02em; }
 .pronouns { font: 12px var(--font-mono); color: var(--muted); margin-left: 4px; letter-spacing: 0; }
