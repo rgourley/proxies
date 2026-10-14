@@ -46,6 +46,20 @@ Run from this folder in Claude Code. Full details live in `.claude/skills/proxie
 | `/proxies export <org>` / `import <file>` | Share an org as one JSON file |
 | `/proxies pages` | Rebuild and republish the results page |
 
+Flags for the run commands:
+
+| Flag | What it does |
+|---|---|
+| `--org <id>` | Use this org instead of the active one |
+| `--use <id>` | Invite only the people whose `uses` list has this use case |
+| `--with a,b,c` | Invite exactly these people. Overrides `--use` |
+| `--dissenter <handle>` | This person holds their position unless someone answers their block |
+| `--no-decision` | End a meeting after the rebuttals, with no decision round |
+| `--noui` | Show the results in chat and do not open the page |
+| `--local` | Build and open the page on your machine, but do not republish it |
+
+After a run, the results page opens by default. Chat shows only the verdict and the run folder.
+
 All feedback is in plain business English.
 
 ## Making your own org and people
