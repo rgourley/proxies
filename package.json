@@ -8,5 +8,5 @@
     "import-org": "node scripts/import-org.ts",
     "test": "node --test scripts/*.test.ts"
   },
-  "license": "FSL-1.1-MIT"
+  "license": "PolyForm-Shield-1.0.0"
 }

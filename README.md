@@ -150,4 +150,4 @@ A person file names its `seat`. The runner gets the seat file, then `org.md`, th
 
 ## License
 
-[FSL-1.1-MIT](LICENSE.md), the Functional Source License. You can use, modify, and share Proxies for any purpose, including inside your company, except to sell a product or service that competes with it. Each version becomes MIT two years after its release.
+[PolyForm Shield 1.0.0](LICENSE.md). You can use, change, and share Proxies for any purpose, including inside your company, except to build a product that competes with it. Versions published before this change keep the FSL-1.1-MIT license they shipped with.
