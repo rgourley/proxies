@@ -7,7 +7,7 @@ Each proxy writes:
 - **Top three questions** it will ask in the real meeting, in the order it will ask them. Each question is in the proxy's voice and names the step, node, or screen it is about.
 - **The answer that satisfies it**: for each question, what a presenter must say or show.
 
-At most 300 words.
+Aim for about 300 words.
 
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.

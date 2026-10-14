@@ -21,4 +21,5 @@ Writing rules:
 - Name a step by what it does, in words: "the invite screen", "when someone revokes a user". Never refer to diagram node letters, IDs, or line numbers.
 - Explain any acronym or term of art the first time you use it.
 - Short sentences. One point per sentence.
+- Treat a word target in the FORMAT block as a target, not a limit. Write more when the extra words explain what to fix or what to weigh. Never pad, repeat yourself, or restate what someone else said.
 - When the prompt gives an OUTPUT path, write your full response to that one file with the Write tool, then reply with only the verdict line. Never write to any other path.

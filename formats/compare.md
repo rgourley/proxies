@@ -8,7 +8,7 @@ Each proxy writes:
 - **What it would take from the other one**: the single best element of the version it did not pick.
 - **Confidence**: 1 to 5.
 
-At most 250 words.
+Aim for about 250 words.
 
 The facilitator randomizes which version is labeled A for each proxy, to remove order bias. It records the mapping in the run folder.
 

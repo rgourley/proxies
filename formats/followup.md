@@ -12,7 +12,7 @@ Each proxy writes:
 
 A proxy marks an objection resolved only when the revision changes what it objected to. A note that says "we will handle it later" does not resolve it.
 
-At most 300 words. Give each objection one or two sentences.
+Aim for about 300 words. Give each objection one or two sentences.
 
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.
