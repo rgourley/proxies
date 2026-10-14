@@ -1,3 +1,5 @@
+<img width="1456" height="816" alt="submerge _mid-century_modern_illustration_1950s_corporate_ann_2f91d567-bb8e-40df-98b6-c187114f47e4_0" src="https://github.com/user-attachments/assets/b21ac298-c628-4c09-9031-e0df31f728bb" />
+
 # Proxies: simulated stakeholder reviews in Claude Code
 
 A simulated room of stakeholders you run an idea, prototype, or design concept past before the real meeting. Each person has a card: role, incentives, hard lines, blind spots, voice. You give them a flow, spec, or prototype, and each one tells you where it breaks for them.
