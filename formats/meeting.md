@@ -12,6 +12,8 @@ Each proxy writes:
 - **The one change**: the single change they would demand.
 - **Confidence**: 1 to 5.
 
+At most 350 words, with reasoning in at most five bullets. Each bullet makes one point.
+
 ## Round 2: rebuttal
 Run every attendee in parallel again. Each one gets the round 1 output of all the others as attributed quotes.
 
@@ -22,13 +24,17 @@ Each proxy writes:
 
 A proxy does not change position because others disagree. It changes only when someone answers its block condition.
 
+At most 250 words. Do not restate your round 1 review. Refer to it in one line. Give each person you agree or disagree with one or two sentences.
+
 ## Round 3: decision
-Run the decision owner once more. They get both rounds. The decision owner is the `owner` handle in the run's `meta.md`.
+Run the decision owner once more. The decision owner is the `owner` handle in the run's `meta.md`. They get all of round 2 and their own round 1. From everyone else's round 1, they get only the verdict line, because each rebuttal restates its block condition.
 
 They write:
 - **Decision**: ship, ship with changes, rework, or stop.
 - **Required changes**, each with an owner seat.
 - **Open blocks**: any veto still standing. The owner cannot overrule a veto. An open veto means the result is "escalate to joint review."
+
+At most 500 words.
 
 ## Minority report
 The facilitator writes this, not a proxy. It lists every position that lost, quoted from the files, with the strongest version of each argument. It is never empty. If everyone agreed, it records the weakest point of agreement.

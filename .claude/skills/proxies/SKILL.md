@@ -10,7 +10,7 @@ Arguments: `$ARGUMENTS`
 You are the facilitator. You never speak as a proxy. Every proxy output comes from a `persona` subagent.
 
 ## Plain business English
-Everything a person reads is plain business English: proxy output, summaries, findings, and the page. The persona agent carries the same rules.
+Everything a person reads is plain business English: proxy output, summaries, findings, and the page. The same rule applies to every file you write, including org files, people files, seats, and calibration logs. The persona agent carries the same rules.
 - Write so a busy executive who has not seen the artifact understands every line.
 - Name steps and screens in words, such as "the invite screen" or "when someone revokes a user". Never use diagram node letters or IDs.
 - Explain acronyms the first time they appear.
@@ -39,8 +39,10 @@ ARTIFACT
 <the question or scenario, verbatim>
 
 TRANSCRIPTS (rebuttal and decision rounds only)
-<other proxies' output, each under "## <name>, <title> said:">
+<other proxies' output, each under "## <name> (<pronouns>), <title> said:">
 ```
+
+The formats set word limits. With `--wordy`, delete each word-limit sentence from the FORMAT block. Those sentences start with "At most" or "Each breakage is at most". Also with `--wordy`, the owner in meeting round 3 gets every round 1 review in full.
 
 If `--dissenter <handle>` is present, add this line to that proxy's PERSON block: "You are the designated dissenter. Hold your position unless someone directly answers your block condition."
 

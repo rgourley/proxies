@@ -11,6 +11,8 @@ Each proxy writes up to five breakages. Each breakage has:
 
 If the run has a scenario, every breakage must relate to it.
 
+Each breakage is at most 80 words. Put your strongest breakage first.
+
 ## Synthesis
 The facilitator merges duplicates and keeps attribution for each one. It ranks the breakages by severity, then by how many seats found them. It lists every breakage. It does not drop the low-severity ones.
 
