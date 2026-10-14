@@ -6,7 +6,7 @@ A simulated room of stakeholders you run an idea, prototype, or design concept p
 
 Proxies are simulations. They show the concerns a role would likely raise. They do not predict what a real person says.
 
-<img width="1113" height="842" alt="Screenshot 2026-10-13 at 1 16 44 PM" src="https://github.com/user-attachments/assets/604ad6ea-848c-429b-8b1e-d323037466bf" />
+<img width="1054" height="757" alt="Screenshot 2026-10-14 at 2 33 48 PM" src="https://github.com/user-attachments/assets/9957a5a7-6f9f-4307-8e15-f7922365131c" />
 
 ## Why not just ask for five personas in one prompt
 
@@ -27,6 +27,8 @@ claude
 ```
 
 Claude Code loads the `/proxies` skill and the persona agent from `.claude/` when it starts in this folder. Start a new session after you clone or pull, so it picks up changes to either. Then run `/proxies use tilt` to check that it works.
+
+<img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
 
 ## Commands
 
