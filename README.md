@@ -1,4 +1,4 @@
-<img width="1456" height="816" alt="submerge _mid-century_modern_illustration_1950s_corporate_ann_2f91d567-bb8e-40df-98b6-c187114f47e4_0" src="https://github.com/user-attachments/assets/b21ac298-c628-4c09-9031-e0df31f728bb" />
+<img width="1456" height="816" alt="image-1792012644362" src="https://github.com/user-attachments/assets/6fc0e66d-b9ad-4642-a903-7b790b196aa8" />
 
 # Proxies: simulated stakeholder reviews in Claude Code
 
