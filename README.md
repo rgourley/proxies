@@ -12,7 +12,7 @@ Proxies are simulations. They show the concerns a role would likely raise. They 
 - The people are saved and reused, and you can correct them against what the real person said.
 - They review against the real spec and decision docs, not a stale draft.
 - Formats force an outcome: blind positions, then rebuttals, then a decision, with the dissent recorded.
-- Every run lands on one results page: who blocks, what's critical, what fixes it. See [Using the results page](#using-the-results-page).
+- Every run lands on one results page: who blocks, what's critical, what fixes it. See [The results page](#the-results-page).
 
 ## Setup
 
@@ -64,77 +64,50 @@ All feedback is in plain business English.
 
 ## Making your own org and people
 
-Describe the company in a sentence or two, and Claude drafts the org for you:
+Describe the company, and Claude drafts the org:
 
 ```
 /proxies org new acme "Mid-size insurer, 4,000 staff, buying a claims tool. Regulated by state insurance boards. IT and compliance can veto vendors."
 ```
 
-Claude writes `orgs/acme/org.md`: the business, rules, culture, who decides what, and the company's vocabulary. Anything it guessed rather than took from your description is marked "(assumed)". You see the draft before it saves. Then it offers to add people.
+It writes `orgs/acme/org.md`: the business, rules, culture, who decides what, and the company's vocabulary. Anything it guessed is marked "(assumed)", and you see the draft before it saves.
 
-Add one person at a time. Give a short handle and a seat, which is the role template they start from:
+Then add people one at a time. Each gets a handle and a seat, which is the role template they start from:
 
 ```
 /proxies use acme
 /proxies new dana compliance
 ```
 
-Claude asks for the name and title, drafts the rest from the seat and the org, and shows you before it saves. The seats are `accessibility`, `ai-enablement`, `business-lead`, `client-experience`, `compliance`, `engineering`, `exec-sponsor`, `finance`, `market-data`, `practitioner`, `producer`, `product`, and `risk`. Add your own to `seats/` as markdown files.
+Claude asks for the name and title and drafts the rest. The seats live in `seats/`, and you can add your own. `/proxies clone dana --to acme` adapts a person from another org.
 
-To reuse someone you already built, `/proxies clone dana --to acme` copies the person and rewrites their title, goals, and hard lines for the new company.
+Each person has a `decision` level: `owner` decides, `veto` can block, `approve` must sign off, `consult` gives input, and `inform` is kept in the loop. Everything is plain markdown, so you can also edit the files by hand. Copy `orgs/tilt/` to start.
 
-Everything is plain markdown, so you can also write or edit the files by hand. Copy `orgs/tilt/` as a starting point. Each person needs a `decision` level, which sets their weight in a meeting: `owner` decides, `veto` can block, `approve` must sign off, `consult` gives input, and `inform` is kept in the loop.
+When the real person would have said something different, run `/proxies calibrate dana "what they actually said"`. Claude proposes edits to their file and logs the change.
 
-The people get better when you tune them against the real thing. After a run, if the real Dana would have said something different, run `/proxies calibrate dana "what they actually said"`. Claude proposes edits to their file and logs the change.
+## The results page
 
-## Using the results page
-
-Every run lands on one page. You read and share results there, not in markdown files.
-
-Build it and open it:
+The page opens on its own after every run. To build and open it by hand:
 
 ```bash
 npm run pages
 open runs.html
 ```
 
-To read a run:
-
-1. Pick a run from the list in the right sidebar. The newest run is at the top. Each run has its own link, so you can send someone straight to it.
-2. Check the avatars under the title. The dot on each one is that person's verdict: red is Block, amber is Rework, green is Ship.
-3. Hover **Reviewed** to see what they reviewed. Hover **Context** to see the docs every person read first.
-4. If the run reviewed screens, open **Screens they reviewed** and click any thumbnail to see it full size.
-5. Read the summary: who blocks and why, the ranked findings with severity tags and who raised each one, and what to fix first.
-6. Scroll down for each person's full response, blocks first.
-
-To look at the people:
-
-- Click any name or avatar to open that person's card: role, decision rights, hard lines, blind spots, and voice.
-- Switch the sidebar from **Runs** to **People** to browse a whole org. Use the org picker to change orgs, and **About** to read the org's background.
-- Each card has a **Copy** button for its `/proxies ask <person>` command, so you can paste it into Claude Code and question that person directly.
-- Collapse the sidebar when you want the full width for reading.
-
-To build a page with only one org, for a demo or a screenshot, run `npm run pages -- --org tilt`. It writes `runs.tilt.html`.
-
-To share it, run `/proxies pages`. It rebuilds the page and republishes it as a private Claude artifact. Then use the artifact's Share menu to give your team access.
+Each run shows who blocks, the ranked findings, what to fix first, and every person's full response. Click any name to open that person's card. `npm run pages -- --org tilt` builds a page with one org. `/proxies pages` republishes it as a private Claude artifact that you share from its Share menu.
 
 ## Sharing an org
 
-An org exports to one JSON file with its people, their calibration logs, and the seats they use. In Claude Code, run `/proxies export tilt` and `/proxies import tilt.proxies.json`. From a terminal:
+An org exports to one JSON file with its people, their calibration logs, and the seats they use:
 
 ```bash
 npm run export-org -- tilt
-```
-
-That writes `tilt.proxies.json`. Whoever receives it imports it into their own copy of the repo:
-
-```bash
 npm run import-org -- tilt.proxies.json
 ```
 
-On the results page, open **People**, pick the org, and click **Export** to copy the same JSON. Then run `/proxies import` in Claude Code and it reads the clipboard. Clipboard import uses `pbpaste`, so it works on macOS. Elsewhere, paste the JSON into a file and run `/proxies import <file>`. The page only exports, because it can't write into anyone's repo.
+In Claude Code, use `/proxies export tilt` and `/proxies import tilt.proxies.json`. The page's **Export** button copies the same JSON, and `/proxies import` with no file reads it from the clipboard on macOS.
 
-The import refuses to overwrite an org that already exists. Add `--as <new-id>` to import it under another name. Seats the other repo lacks are added. If a seat differs from their copy, the import stops and names it.
+The import never overwrites an existing org. Add `--as <new-id>` to import it under another name. If a seat differs from your copy, the import stops and names it.
 
 ## Sample orgs
 
@@ -168,12 +141,6 @@ runs/                   one folder per run, with every proxy's output
 ```
 
 A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file.
-
-## Isolation
-
-- Each proxy runs in its own subagent. The main thread facilitates and never speaks as a proxy.
-- The runner receives only its own seat, org, and person text, plus the artifact.
-- The first round is blind. Proxies see each other only through attributed transcripts.
 
 ## License
 
