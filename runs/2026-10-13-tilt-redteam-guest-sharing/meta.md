@@ -1,6 +1,6 @@
 ---
 org: tilt
-verb: redteam
+format: redteam
 date: 2026-10-13
 sequence: 10
 nav: Guest sharing flow v1

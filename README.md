@@ -26,7 +26,7 @@ cd proxies
 claude
 ```
 
-Claude Code loads the `/proxies` skill and the persona agent from `.claude/` when it starts in this folder. Start a new session after you clone or pull, so it picks up changes to either. Then run `/proxies use tilt` to check that it works.
+Claude Code loads the `/proxies` skill and the person agent from `.claude/` when it starts in this folder. Start a new session after you clone or pull, so it picks up changes to either. Then run `/proxies use tilt` to check that it works.
 
 <img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
 
@@ -44,9 +44,10 @@ Run from this folder in Claude Code. Full details live in `.claude/skills/proxie
 | `/proxies compare <a> <b>` | Each person picks a version |
 | `/proxies ask <person> "<question>"` / `talk <person>` | Talk to one person |
 | `/proxies calibrate <person>` | Tune a card against what the real person said |
-| `/proxies org new <id> "<brief>"` | Create an org |
+| `/proxies org new <id> "<description>"` | Create a company org. Add `--group` for an ad hoc group |
 | `/proxies new <handle> <seat>` | Add a person to the active org |
 | `/proxies clone <handle> --to <org>` | Copy a person into another org and adapt them |
+| `/proxies knowledge new <id>` / `add <id> <url or file>` / `refresh <id>` | Build a knowledge collection |
 | `/proxies export <org>` / `import <file>` | Share an org as one JSON file |
 | `/proxies pages` | Rebuild and republish the results page |
 
@@ -91,6 +92,34 @@ When the real person would have said something different, run `/proxies calibrat
 
 Each person gets a generated avatar in the style of the Proxies illustration. Their pronouns choose the hair and clothes, and the same person always gets the same avatar. To set it yourself, add any of these to the person file: `avatar_hair` (bob, bun, ponytail, long, short, curls, scarf, side, buzz, bald, receding, quiff), `avatar_top` (blazer, suit, turtleneck, vneck, dress), `avatar_facial_hair` (none, beard, mustache, stubble), and `avatar_glasses` (none, round, square). To get a different random avatar, add `avatar_seed` with any text.
 
+## Knowledge
+
+Knowledge is what people know. The artifact is what they judge. The two never mix: knowledge lives in `knowledge/`, and the artifact is copied into each run's `input/` folder.
+
+A collection is one folder: `index.md` says what it is and lists its key points, each tied to a source, and `sources/` holds a saved copy of each document with its link and last-edited date. People read the index first and open a source only when a point depends on it.
+
+```
+/proxies knowledge new cardiology-trials "Phase 3 trials for the drugs in our intake flow"
+/proxies knowledge add cardiology-trials https://example.org/trial-a.pdf ~/research/trial-b.md
+```
+
+A collection is used in one of two ways:
+
+- **Expertise.** `knows: [cardiology-trials]` on a person, or in `org.md` for everyone, means they know it. They apply it and cite it, but they don't review it. People without it don't get it, so the cardiologist and the compliance officer in the same run know different things.
+- **Context.** `context: cardiology-trials` in a run's `meta.md` means every person in that run reads it before the review. Use this for the spec of the project under review.
+
+The same collection can be expertise in one run and context in another. `/proxies knowledge refresh <id>` pulls every source again from its link.
+
+## Groups
+
+Not every review is a company. An ad hoc group is an org with people and a purpose, and no business, culture, or decision rights:
+
+```
+/proxies org new options-panel --group "Retail and professional options traders who test trading tools"
+```
+
+Groups use the same commands. A group has no decision owner, so a meeting needs `--no-decision` or an owner you name.
+
 ## The results page
 
 The page opens on its own after every run. To build and open it by hand:
@@ -124,29 +153,31 @@ Three fictional orgs ship with the repo so you can try it right away. `tilt` is 
 /proxies redteam path/to/your-flow.mmd "an agency invites 30 client reviewers"
 ```
 
-Git does not keep a client org out of the repo by default. List client orgs, briefs, and runs in `.git/info/exclude`. That file stays on your machine and is never pushed:
+Git does not keep a client org out of the repo by default. List client orgs, knowledge, and runs in `.git/info/exclude`. That file stays on your machine and is never pushed:
 
 ```
 orgs/acme/
-briefs/acme/
+knowledge/acme-*/
 runs/*acme*/
 ```
 
 ## Layout
 
+[ONTOLOGY.md](ONTOLOGY.md) defines every term below.
+
 ```
 seats/                  role templates that every org reuses
-orgs/<org>/org.md       company context: regulators, culture, decision rights, vocabulary
+orgs/<org>/org.md       the org: type, business, rules, culture, decision rights, vocabulary
 orgs/<org>/people/      one file per person; frontmatter feeds the card
 orgs/<org>/calibration/ one log per person: real quotes, misses, and the edits they caused
-formats/                rules for each command: meeting, redteam, prep, followup, compare, ask/talk, calibrate
-briefs/<project>/       shared project context: brief.md plus the real source docs every proxy reads
-runs/                   one folder per run, with every proxy's output
-.claude/agents/         the persona runner (one person per subagent)
-.claude/skills/proxies/ the orchestrator
+knowledge/<id>/         a collection: index.md plus sources/
+formats/                the review procedures: meeting, redteam, prep, followup, compare, ask/talk, calibrate
+runs/<run>/             meta.md, input/ (the artifact), one folder per round, summary.md
+.claude/agents/         the person agent (one person per subagent)
+.claude/skills/proxies/ the facilitator's instructions
 ```
 
-A person file names its `seat`. The runner gets the seat file, then `org.md`, then the person file.
+A person's briefing is their seat, then `org.md`, then their person file, then any expertise. Later layers win.
 
 ## License
 

@@ -40,16 +40,17 @@ function verdictRank(o: Output): number {
   return o.verdict ? VERDICT_ORDER.indexOf(o.verdict) : VERDICT_ORDER.length;
 }
 
-type BriefSource = { title: string; url: string };
+type Source = { title: string; url: string };
 
-type Brief = { id: string; name: string; sources: BriefSource[] };
+// Context is one knowledge collection that every person in the run reads before the review.
+type Context = { id: string; name: string; sources: Source[] };
 
 type Round = { id: string; label: string; note: string; outputs: Output[] };
 
 type Run = {
   id: string;
   org: Org;
-  verb: string;
+  format: string;
   date: string;
   title: string;
   nav: string;
@@ -57,7 +58,7 @@ type Run = {
   artifact: string;
   artifactSource: string;
   source: { url: string; label: string } | null;
-  brief: Brief | null;
+  context: Context | null;
   attendees: Person[];
   summaries: { label: string; markdown: string }[];
   ownerDecision: { person: Person; markdown: string } | null;
@@ -67,17 +68,11 @@ type Run = {
 const OUT_LOCAL = join(ROOT, "runs.html");
 const OUT_ARTIFACT = join(ROOT, "runs.artifact.html");
 
-// The facilitator writes one of these per run. They show first, in this order, under a plain label.
-const SUMMARY_FILES: readonly { file: string; label: string }[] = [
-  { file: "decision.md", label: "Summary" },
-  { file: "findings.md", label: "Findings" },
-  { file: "delta.md", label: "What changed" },
-  { file: "result.md", label: "Result" },
-  { file: "cheatsheet.md", label: "Cheat sheet" },
-];
+// The facilitator writes the summary of every run. It shows first.
+const SUMMARY_FILE = "summary.md";
 
-// The decision owner writes this file in the first person, so the page names the owner above it.
-const OWNER_DECISION_FILE = "03-decision.md";
+// The decision owner writes the decision at the end of a meeting, in the first person. The page names the owner above it.
+const OWNER_DECISION_FILE = "decision.md";
 
 // The owner is the "owner" handle in meta.md. A run without that field uses the attendee whose decision level is owner.
 function ownerOf(fields: Frontmatter, attendees: Person[], org: Org, metaFile: string): Person | null {
@@ -130,12 +125,12 @@ function sourceOf(fields: Map<string, string | string[]>, file: string): { url: 
   return { url, label };
 }
 
-// A brief is shared context for every run on one project. Each source file starts with "# Title" and a "Source: <url>" line.
-function readBrief(id: string): Brief {
-  const dir = join(ROOT, "briefs", id);
-  const briefFile = join(dir, "brief.md");
-  if (!existsSync(briefFile)) throw new Error(`Brief not found: ${briefFile}`);
-  const { fields } = parse(readFileSync(briefFile, "utf8"), briefFile);
+// A knowledge collection has an index and a sources folder. Each source starts with "# Title" and a "Source: <url>" line.
+function readContext(id: string): Context {
+  const dir = join(ROOT, "knowledge", id);
+  const indexFile = join(dir, "index.md");
+  if (!existsSync(indexFile)) throw new Error(`Knowledge collection not found: ${indexFile}`);
+  const { fields } = parse(readFileSync(indexFile, "utf8"), indexFile);
   const sourceDir = join(dir, "sources");
   const sources = existsSync(sourceDir)
     ? readdirSync(sourceDir)
@@ -148,7 +143,7 @@ function readBrief(id: string): Brief {
           return { title, url };
         })
     : [];
-  return { id, name: text(fields, "name", briefFile), sources };
+  return { id, name: text(fields, "name", indexFile), sources };
 }
 
 function readRun(id: string, orgs: Org[]): Run {
@@ -158,7 +153,7 @@ function readRun(id: string, orgs: Org[]): Run {
   const orgId = text(fields, "org", metaFile);
   const org = orgs.find((o) => o.id === orgId);
   if (!org) throw new Error(`Run ${id} names unknown org "${orgId}"`);
-  const summaries = SUMMARY_FILES.filter((s) => existsSync(join(dir, s.file))).map((s) => ({ label: s.label, markdown: readFileSync(join(dir, s.file), "utf8") }));
+  const summaries = existsSync(join(dir, SUMMARY_FILE)) ? [{ label: "Summary", markdown: readFileSync(join(dir, SUMMARY_FILE), "utf8") }] : [];
   const attendees = list(fields, "attendees", metaFile).map((h) => findPerson(org, h, metaFile));
   const rounds = readdirSync(dir)
     .filter((f) => /^\d+-/.test(f) && statSync(join(dir, f)).isDirectory())
@@ -174,7 +169,7 @@ function readRun(id: string, orgs: Org[]): Run {
   return {
     id,
     org,
-    verb: text(fields, "verb", metaFile),
+    format: text(fields, "format", metaFile),
     date: text(fields, "date", metaFile),
     title: text(fields, "title", metaFile),
     nav: typeof fields.get("nav") === "string" ? String(fields.get("nav")) : text(fields, "title", metaFile).replace(/^[^:]+:\s*/, ""),
@@ -182,7 +177,7 @@ function readRun(id: string, orgs: Org[]): Run {
     artifact: text(fields, "artifact", metaFile),
     artifactSource: readArtifact(dir, text(fields, "artifact", metaFile)),
     source: sourceOf(fields, metaFile),
-    brief: typeof fields.get("brief") === "string" ? readBrief(String(fields.get("brief"))) : null,
+    context: typeof fields.get("context") === "string" ? readContext(String(fields.get("context"))) : null,
     attendees,
     summaries,
     ownerDecision: readOwnerDecision(dir, ownerOf(fields, attendees, org, metaFile), metaFile),
@@ -387,13 +382,13 @@ function overview(run: Run): string {
   </span>`;
 }
 
-// The context chip lists the brief's sources. Hover or focus shows each source as a link.
+// The context chip lists the sources of the run's context. Hover or focus shows each source as a link.
 function contextChip(run: Run): string {
-  if (!run.brief) return "";
-  const links = run.brief.sources.map((s) => (s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)} ↗</a>` : `<span>${esc(s.title)}</span>`)).join("");
+  if (!run.context) return "";
+  const links = run.context.sources.map((s) => (s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)} ↗</a>` : `<span>${esc(s.title)}</span>`)).join("");
   return `<span class="overview context" tabindex="0">
-    <span class="ov-label">Context</span><span class="ov-title">${run.brief.sources.length} docs</span>
-    <span class="ov-pop" role="tooltip"><span class="ov-pop-title">${esc(run.brief.name)}</span><span class="ov-pop-note">Every proxy in this run read these before reviewing.</span><span class="ctx-links">${links}</span></span>
+    <span class="ov-label">Context</span><span class="ov-title">${run.context.sources.length} docs</span>
+    <span class="ov-pop" role="tooltip"><span class="ov-pop-title">${esc(run.context.name)}</span><span class="ov-pop-note">Every proxy in this run read these before reviewing.</span><span class="ctx-links">${links}</span></span>
   </span>`;
 }
 
@@ -410,16 +405,18 @@ type Screen = { file: string; step: string; note: string };
 
 type ScreenGroup = { label: string; screens: Screen[] };
 
-// An artifact that lists "Screenshot: prototype/<file>.png" lines is a screen-by-screen prototype. The page shows those screens as a strip per use case.
-// ImgDir gives the folder that holds a run's screenshots, relative to the page.
-type ImgDir = (run: Run) => string;
+// An artifact that lists "Screenshot: <path>.png" lines is a screen-by-screen prototype. The page shows those screens as a strip per use case.
+// Each path is relative to the run's input folder. The local page and the published artifact use the same paths.
+function inputDir(run: Run): string {
+  return `runs/${run.id}/input/`;
+}
 
 function screenGroups(source: string): ScreenGroup[] {
   const groups: ScreenGroup[] = [];
   for (const block of source.split(/^## /m).slice(1)) {
     const [label, ...rest] = block.split("\n");
     const screens = rest.join("\n").split(/^### /m).slice(1).flatMap((step) => {
-      const file = step.match(/^Screenshot:\s*prototype\/(\S+\.png)/m)?.[1];
+      const file = step.match(/^Screenshot:\s*(\S+\.png)/m)?.[1];
       if (!file) return [];
       return [{ file, step: step.split("\n")[0].trim(), note: step.match(/^What happens:\s*(.*)$/m)?.[1] ?? "" }];
     });
@@ -428,8 +425,8 @@ function screenGroups(source: string): ScreenGroup[] {
   return groups;
 }
 
-function gallery(run: Run, imgDir: ImgDir): string {
-  const imgBase = imgDir(run);
+function gallery(run: Run): string {
+  const imgBase = inputDir(run);
   const groups = screenGroups(run.artifactSource);
   if (groups.length === 0) return "";
   const total = groups.reduce((n, g) => n + g.screens.length, 0);
@@ -454,10 +451,10 @@ function progressBanner(run: Run): string {
   return `<p class="in-progress" role="status"><span class="spinner" aria-hidden="true"></span>In progress. ${answered} of ${run.attendees.length} people have answered${esc(stage)}. The summary appears here when the run finishes.</p>`;
 }
 
-function runSection(run: Run, imgDir: ImgDir): string {
+function runSection(run: Run): string {
   return `<section class="run" id="${esc(run.id)}">
   <header class="run-head">
-    <p class="eyebrow"><span class="verb">${esc(run.verb)}</span><span>${esc(run.date)}</span><span class="sep" aria-hidden="true"></span><a href="#" class="org-link" data-person="org-${esc(run.org.id)}">${esc(run.org.name)}</a></p>
+    <p class="eyebrow"><span class="format">${esc(run.format)}</span><span>${esc(run.date)}</span><span class="sep" aria-hidden="true"></span><a href="#" class="org-link" data-person="org-${esc(run.org.id)}">${esc(run.org.name)}</a></p>
     <h1 class="page-title">${esc(run.title)}</h1>
     <div class="run-meta">
       ${overview(run)}
@@ -465,7 +462,7 @@ function runSection(run: Run, imgDir: ImgDir): string {
       <div class="attendees">${attendeeRow(run)}</div>
     </div>
   </header>
-  ${gallery(run, imgDir)}
+  ${gallery(run)}
   ${inProgress(run) ? progressBanner(run) : ""}
   <div class="run-main">
   ${run.summaries.map((s) => `<article class="summary"><p class="file">${esc(s.label)}</p><div class="md">${markdown(s.markdown, run.org)}</div></article>`).join("\n")}
@@ -490,7 +487,7 @@ pre.code { background: var(--panel); border-radius: 6px; padding: 12px; overflow
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 .run-head { display: grid; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
 .eyebrow { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font: 12.5px var(--font-mono); color: var(--muted); }
-.verb { font: 500 11.5px var(--font-body); padding: 2px 8px; border-radius: 4px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); text-transform: capitalize; }
+.format { font: 500 11.5px var(--font-body); padding: 2px 8px; border-radius: 4px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); text-transform: capitalize; }
 .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
 .run-head h1 { margin: 0; font: 600 22px/1.3 var(--font-display); letter-spacing: -0.01em; text-wrap: balance; }
 .attendees { display: flex; flex-wrap: wrap; gap: 3px; }
@@ -645,7 +642,7 @@ dialog#person-dialog::backdrop { background: rgba(10, 10, 12, .55); backdrop-fil
 
 function navGroup(runs: Run[]): string {
   return `<div class="nav-group"><p class="nav-label">Runs</p>${runs
-    .map((r) => `<a href="#${esc(r.id)}" title="${esc(r.title)}"><span class="nav-text">${esc(r.nav)}</span><span class="nav-meta">${esc(r.verb)}</span></a>`)
+    .map((r) => `<a href="#${esc(r.id)}" title="${esc(r.title)}"><span class="nav-text">${esc(r.nav)}</span><span class="nav-meta">${esc(r.format)}</span></a>`)
     .join("")}</div>`;
 }
 
@@ -752,7 +749,7 @@ function bundleScript(org: Org): string {
   return `<script type="application/json" class="org-bundle" data-org="${esc(org.id)}">${json}</script>`;
 }
 
-function fragment(runs: Run[], orgs: Org[], imgDir: ImgDir): string {
+function fragment(runs: Run[], orgs: Org[]): string {
   return `<title>Review board</title>
 ${FAVICON}
 ${FONTS}
@@ -762,7 +759,7 @@ ${avatarSprite(orgs.flatMap((o) => o.people))}
   ${sidebar(navGroup(runs), peopleNav(orgs))}
   <main class="content"><div class="content-inner">
     <header class="masthead">${LOGO}</header>
-    ${runs.map((r) => runSection(r, imgDir)).join("\n")}
+    ${runs.map((r) => runSection(r)).join("\n")}
   </div></main>
 </div>
 <dialog id="person-dialog" aria-label="Person card">
@@ -790,7 +787,7 @@ ${FONTS}
 ${avatarSprite(org.people)}
 <main class="content share"><div class="content-inner">
   <header class="masthead">${LOGO}</header>
-  ${runSection(run, (r) => `briefs/${r.brief?.id ?? ""}/prototype/`)}
+  ${runSection(run)}
 </div></main>
 <dialog id="person-dialog" aria-label="Person card">
   <button type="button" class="dialog-close" aria-label="Close">Close</button>
@@ -818,8 +815,8 @@ const SHARE_CSS = `
 function inlineScreens(html: string): string {
   // The full-size view reads the thumbnail's data, so each screenshot is stored once.
   return html
-    .replace(/data-image="briefs\/[^"]+\.png"/g, 'data-image="thumb"')
-    .replace(/src="(briefs\/[^"]+\.png)"/g, (_m, path: string) => {
+    .replace(/data-image="runs\/[^"]+\.png"/g, 'data-image="thumb"')
+    .replace(/src="(runs\/[^"]+\.png)"/g, (_m, path: string) => {
       const file = join(ROOT, path);
       if (!existsSync(file)) throw new Error(`Screenshot not found: ${path}`);
       return `src="data:image/png;base64,${readFileSync(file).toString("base64")}"`;
@@ -864,11 +861,10 @@ function main(): void {
     .sort((a, b) => b.date.localeCompare(a.date) || b.sequence - a.sequence);
   const local = only === null ? OUT_LOCAL : OUT_LOCAL.replace(/\.html$/, `.${only}.html`);
   const artifact = only === null ? OUT_ARTIFACT : OUT_ARTIFACT.replace(/\.artifact\.html$/, `.${only}.artifact.html`);
-  // The local page reads screenshots from the brief folder. The artifact publishes them under screens/.
   // While a run is in progress, the local page reloads itself so new answers appear without a manual refresh.
-  const page = localDocument(fragment(runs, orgs, (run) => `briefs/${run.brief?.id ?? ""}/prototype/`));
+  const page = localDocument(fragment(runs, orgs));
   writeFileSync(local, runs.some(inProgress) ? page.replace("<head>", `<head><meta http-equiv="refresh" content="15">`) : page);
-  writeFileSync(artifact, fragment(runs, orgs, () => "screens/"));
+  writeFileSync(artifact, fragment(runs, orgs));
   console.log(`Wrote ${basename(local)} and ${basename(artifact)}: ${runs.length} runs`);
 }
 

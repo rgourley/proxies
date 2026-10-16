@@ -1,9 +1,9 @@
 # Format: redteam
 
-Each proxy tries to break the artifact from their seat. There is no consensus step.
+Each person tries to break the artifact from their seat. There is no consensus step.
 
 ## One round, in parallel
-Each proxy writes up to five breakages. Each breakage has:
+Each person writes up to five breakages. Each breakage has:
 - **Where**: the step, node, or screen.
 - **How it breaks**: a concrete scenario with a specific client or attacker.
 - **Severity**: critical, high, medium, low, judged from their seat.

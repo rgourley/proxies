@@ -1,5 +1,6 @@
 ---
 org: tilt
+type: company
 name: Tilt
 tagline: 60-person B2B SaaS company that makes a project planning tool for agencies and consultancies.
 use_cases:

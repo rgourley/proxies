@@ -1,5 +1,6 @@
 ---
 org: northpine
+type: company
 name: Northpine Games
 tagline: 280-person independent studio that runs one live-service game and is building its next one.
 use_cases:

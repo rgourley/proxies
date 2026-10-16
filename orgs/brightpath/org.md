@@ -1,5 +1,6 @@
 ---
 org: brightpath
+type: company
 name: Brightpath Health
 tagline: Regional clinic network with 14 primary-care and urgent-care sites.
 use_cases:

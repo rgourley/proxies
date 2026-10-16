@@ -24,13 +24,17 @@ export type Person = {
   hard_lines: string[];
   blind_spots: string[];
   uses: string[];
+  knows: string[];
   sections: Section[];
   avatar: AvatarInput;
 };
 
 export type UseCase = { id: string; label: string };
 
-export type Org = { id: string; name: string; tagline: string; note: string; useCases: UseCase[]; people: Person[] };
+// A company org has a business, rules, culture, and decision rights. A group org is an ad hoc set of people with a purpose.
+export type OrgType = "company" | "group";
+
+export type Org = { id: string; type: OrgType; name: string; tagline: string; note: string; useCases: UseCase[]; knows: string[]; people: Person[] };
 
 export type Frontmatter = Map<string, string | string[]>;
 
@@ -140,6 +144,18 @@ function sections(body: string): Section[] {
     });
 }
 
+function orgType(fields: Frontmatter, file: string): OrgType {
+  const value = text(fields, "type", file);
+  if (value !== "company" && value !== "group") throw new Error(`Unknown org type "${value}" in ${file}. Use company or group`);
+  return value;
+}
+
+// Every "knows" id must name a folder in knowledge/ that has an index.md.
+function checkKnowledge(ids: string[], file: string): void {
+  const missing = ids.filter((k) => !existsSync(join(ROOT, "knowledge", k, "index.md")));
+  if (missing.length > 0) throw new Error(`${file} knows ${missing.join(", ")}, but knowledge/<id>/index.md does not exist for it`);
+}
+
 function optionalText(fields: Frontmatter, key: string): string | null {
   const value = fields.get(key);
   return typeof value === "string" ? value : null;
@@ -165,6 +181,7 @@ function readPerson(file: string): Person {
     hard_lines: list(fields, "hard_lines", file),
     blind_spots: list(fields, "blind_spots", file),
     uses: optionalList(fields, "uses", file),
+    knows: optionalList(fields, "knows", file),
     sections: sections(body),
     avatar: {
       seed: optionalText(fields, "avatar_seed") ?? `${org}/${handle}`,
@@ -194,7 +211,10 @@ export function readOrg(id: string): Org {
     const unknown = person.uses.filter((u) => !known.has(u));
     if (unknown.length > 0) throw new Error(`${person.handle} in ${id} uses unknown use cases: ${unknown.join(", ")}. Known: ${[...known].join(", ")}`);
   }
-  return { id, name: text(fields, "name", orgFile), tagline: text(fields, "tagline", orgFile), note, useCases, people };
+  const knows = optionalList(fields, "knows", orgFile);
+  checkKnowledge(knows, orgFile);
+  for (const person of people) checkKnowledge(person.knows, join(peopleDir, `${person.handle}.md`));
+  return { id, type: orgType(fields, orgFile), name: text(fields, "name", orgFile), tagline: text(fields, "tagline", orgFile), note, useCases, knows, people };
 }
 
 export function readOrgs(): Org[] {
