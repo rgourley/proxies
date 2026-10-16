@@ -53,12 +53,12 @@ const COLOR_FRAMES: ReadonlyMap<string, readonly string[]> = new Map([
 ]);
 
 // Pronouns choose the pool for hair and tops, how often facial hair appears, and the shoulder width.
-// "they/them" and any other value use every style.
+// "they/them" and any other value use the neutral pool: short and mid-length hair, no dress, and no facial hair.
 const POOLS: ReadonlyMap<string, Pool> = new Map([
   ["she/her", { hair: ["bob", "bun", "ponytail", "long", "curls", "scarf", "side"], top: ["blazer", "turtleneck", "vneck", "dress"], facialHair: 0, broad: false }],
   ["he/him", { hair: ["short", "side", "curls", "buzz", "bald", "receding", "quiff"], top: ["blazer", "suit", "turtleneck", "vneck"], facialHair: 0.55, broad: true }],
 ]);
-const ANY: Pool = { hair: HAIRS, top: TOP_KINDS, facialHair: 0.15, broad: false };
+const ANY: Pool = { hair: ["short", "side", "curls", "buzz", "bob"], top: ["blazer", "turtleneck", "vneck"], facialHair: 0, broad: false };
 
 // FNV-1a gives a stable 32-bit number from a string. Mulberry32 turns it into a sequence.
 function hash(text: string): number {
