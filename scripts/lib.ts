@@ -304,6 +304,11 @@ code { font: 12.5px var(--font-mono); background: var(--panel); padding: 2px 6px
 .side-toggle { margin-left: auto; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--card); cursor: pointer; }
 .side-toggle:hover { background: var(--hover); }
 .side-toggle { color: var(--ink-2); }
+.theme-toggle { margin-left: auto; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--card); color: var(--ink-2); cursor: pointer; }
+.theme-toggle:hover { background: var(--hover); }
+.theme-toggle + .side-toggle { margin-left: 0; }
+.shell.collapsed .theme-toggle { display: none; }
+.shell.collapsed .side-toggle { margin-left: auto; }
 .brand-icon { display: grid; place-items: center; color: var(--ink-2); }
 .brand-name { font: 600 15px/1 var(--font-display); }
 .masthead { padding-bottom: 28px; }
@@ -342,6 +347,27 @@ code { font: 12.5px var(--font-mono); background: var(--panel); padding: 2px 6px
 
 // Copy buttons write their data-copy value to the clipboard. If the browser refuses, the script selects the text instead.
 export const COPY_SCRIPT = `<script>
+// The theme toggle switches between light and dark. With no saved choice, the page follows the system setting.
+(() => {
+  const root = document.documentElement;
+  const toggle = document.querySelector(".theme-toggle");
+  const dark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const label = () => {
+    if (!toggle) return;
+    const text = dark() ? "Switch to light theme" : "Switch to dark theme";
+    toggle.setAttribute("aria-label", text);
+    toggle.title = text;
+  };
+  try { const saved = localStorage.getItem("proxies-theme"); if (saved === "light" || saved === "dark") root.dataset.theme = saved; } catch (e) {}
+  label();
+  if (!toggle) return;
+  toggle.addEventListener("click", () => {
+    const next = dark() ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("proxies-theme", next); } catch (e) {}
+    label();
+  });
+})();
 // The sidebar toggle collapses the sidebar to a narrow rail. The choice is kept per viewer when storage works.
 (() => {
   const shell = document.querySelector(".shell");
@@ -375,6 +401,7 @@ const ICONS = {
   runs: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
   people: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>',
+  theme: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/>',
 } as const;
 
 export function icon(name: keyof typeof ICONS, size: number): string {
@@ -387,7 +414,7 @@ export const FAVICON = `<link rel="icon" href="data:image/svg+xml,${encodeURICom
 
 export function sidebar(runsList: string, peopleList: string): string {
   return `<aside class="side">
-  <div class="brand"><span class="brand-name">Library</span><button type="button" class="side-toggle" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">${icon("panel", 16)}</button></div>
+  <div class="brand"><span class="brand-name">Library</span><button type="button" class="theme-toggle" aria-label="Switch theme" title="Switch theme">${icon("theme", 15)}</button><button type="button" class="side-toggle" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">${icon("panel", 16)}</button></div>
   <div class="tabs" role="tablist" aria-label="Sidebar lists">
     <button type="button" role="tab" id="tab-runs" aria-controls="panel-runs" aria-selected="true" data-panel="runs">${icon("runs", 13)}Runs</button>
     <button type="button" role="tab" id="tab-people" aria-controls="panel-people" aria-selected="false" data-panel="people">${icon("people", 13)}People</button>
