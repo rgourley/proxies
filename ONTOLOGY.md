@@ -21,7 +21,7 @@ These are the names for every part of Proxies. Use these terms in files, code, c
 | Term | Definition | Where it lives |
 |---|---|---|
 | **Knowledge** | A saved collection of material that someone knows, such as research papers or a project's spec. A collection has an index and its sources. It is never the thing under review. | `knowledge/<id>/` |
-| **Index** | The short entry point of a collection: what it is, its key points, and which source supports each point. A proxy reads the index first. | `knowledge/<id>/index.md` |
+| **Index** | The short entry point of a collection: what it is, its key points, which source supports each point, and which sources are Required. A proxy reads the index and the Required sources, and opens other sources only when a point depends on them. | `knowledge/<id>/index.md` |
 | **Source** | One saved document in a collection. Each source starts with its title, its link, and the date it was last edited. | `knowledge/<id>/sources/` |
 | **Expertise** | Knowledge that a proxy or an org knows. The proxy applies it and does not review it. | `knows` on a proxy or in `org.md` |
 | **Context** | Knowledge that every proxy in one run reads before the review, such as the spec for the project under review. | `context` in a run's `meta.md` |
