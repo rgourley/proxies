@@ -31,12 +31,14 @@ Each proxy gets the facilitator's list of ideas from rounds 1 and 2. Each proxy 
 
 Aim for about 150 words.
 
-## Summary
-The facilitator writes this, not a proxy:
-- **Themes**: the ideas grouped by the problem they solve. Each idea keeps its author and the proxies who built on it.
-- **Strongest ideas**: ranked by how many proxies built on them, how well they survived their challenges, and the votes, if there was a vote round.
-- **Open questions**: the challenges that no one answered.
-- **Worth keeping**: one idea that the room passed over but that should not be dropped, with the reason. It is never empty.
+## Facilitator
+- The question is what the proxies explore. Copy any seed files to `input/`. With no seed, write the question to `input/question.md` and use it as the artifact.
+- Round 1 → `01-ideas`. Round 2 → `02-build`. With `--vote`, write `ideas.md` with every idea and its author after round 2, then run round 3 → `03-vote`.
+- Write `summary.md`, and attribute every idea and every build to its proxy:
+  - **Themes**: the ideas grouped by the problem they solve. Each idea keeps its author and the proxies who built on it.
+  - **Strongest ideas**: ranked by how many proxies built on them, how well they survived their challenges, and the votes, if there was a vote round.
+  - **Open questions**: the challenges that no one answered.
+  - **Worth keeping**: one idea that the room passed over but that should not be dropped, with the reason. It is never empty.
 
 ## Language
 Plain business English. Explain acronyms the first time. Write in the first person, in the proxy's voice. Do not start with a verdict line.

@@ -18,8 +18,11 @@ One round, in parallel. It is six months after launch, and the artifact failed. 
 
 Aim for about 150 words for the story and about 80 words per cause.
 
-## Synthesis
-The facilitator merges duplicates and keeps attribution for each one. It ranks the breakages by severity, then by how many seats found them. It lists every breakage. It does not drop the low-severity ones.
+## Facilitator
+- Responses go to `01-attacks/<handle>.md`. With `--premortem`, run `brief.ts` with the round `01-premortem`, and responses go to `01-premortem/<handle>.md`.
+- Merge duplicate breakages and keep the attribution of each one. Rank them by severity, then by how many seats found them. List every breakage, including the low-severity ones.
+- Write `summary.md`: who blocks and why, the ranked findings table, and a section named "What to fix first": the fixes that answer the most findings and blocks, each with the proxies who raised it.
+- A premortem summary starts with the failure stories that more than one proxy told.
 
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.

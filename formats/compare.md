@@ -10,7 +10,10 @@ Each proxy writes:
 
 Aim for about 250 words.
 
-The facilitator randomizes which version is labeled A for each proxy, to remove order bias. It records the mapping in the run folder.
+## Facilitator
+- Copy the files to `input/a.*` and `input/b.*`. For each proxy, flip a coin to decide which file they see as "A", to remove order bias. Record the mapping in `mapping.md`.
+- Responses go to `01-compare/<handle>.md`.
+- Write `summary.md`: each pick mapped back to the real file, a tally, and each proxy's reason and what they would take from the other version.
 
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.

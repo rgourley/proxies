@@ -14,6 +14,11 @@ A proxy marks an objection resolved only when the revision changes what it objec
 
 Aim for about 300 words. Give each objection one or two sentences.
 
+## Facilitator
+- Create a new run with format `followup`. Write the earlier run's folder path, relative to the repo, to `previous.txt`. Use the earlier run's question and attendees, and its `--dissenter`, unless the user passes new flags. `brief.ts` gives each proxy only their own earlier responses.
+- Responses go to `01-followup/<handle>.md`.
+- Write `summary.md`: a table with one row per objection, who raised it, and resolved, partly resolved, or open. Then new issues and position changes. If a veto is still open, say so in the first line.
+
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.
 

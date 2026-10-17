@@ -39,7 +39,7 @@ function sections(markdown: string): Section[] {
     });
 }
 
-// The FORMAT block holds the round's section, then the Verdict and Language sections. Other rounds' sections are left out.
+// The FORMAT block holds the round's section, then the Verdict and Language sections. Other rounds' sections and the Facilitator section are left out.
 function formatBlock(format: string, round: string, wordy: boolean): string {
   const file = join(ROOT, "formats", `${format}.md`);
   if (!existsSync(file)) throw new Error(`No format file: ${file}`);
@@ -54,7 +54,7 @@ function formatBlock(format: string, round: string, wordy: boolean): string {
     parts = [own, ...shared];
   } else {
     const intro = source.split(/^## /m)[0].replace(/^# .*\n/, "").trim();
-    parts = [{ heading: "Instructions", body: intro }, ...all.filter((s) => s.heading !== "Synthesis" && s.heading !== "Summary" && s.heading !== "Minority report")];
+    parts = [{ heading: "Instructions", body: intro }, ...all.filter((s) => s.heading !== "Facilitator")];
   }
   const block = parts.map((s) => `## ${s.heading}\n${s.body}`).join("\n\n");
   return wordy ? block.replace(/Aim for about[^.]*\.\s*/g, "") : block;

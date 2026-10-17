@@ -9,6 +9,10 @@ Each proxy writes:
 
 Aim for about 300 words.
 
+## Facilitator
+- Responses go to `01-prep/<handle>.md`.
+- Write `summary.md`: one section per proxy in decision order (owner, veto, approve, consult, inform), with their questions and the answers that satisfy them.
+
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.
 

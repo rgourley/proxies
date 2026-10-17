@@ -36,8 +36,11 @@ They write:
 
 Aim for about 500 words.
 
-## Minority report
-The facilitator writes this, not a proxy. It lists every position that lost, quoted from the files, with the strongest version of each argument. It is never empty. If everyone agreed, it records the weakest point of agreement.
+## Facilitator
+- Before round 1, set `owner` in `meta.md`. If one attendee has `decision: owner`, use that proxy. If more than one does, use the decision rights in `org.md` to choose, and tell the user which one you chose. If no attendee is an owner, stop and ask the user. A group org usually has no owner.
+- Round 1 → `01-blind`. Round 2 → `02-rebuttal`. Round 3 → `decision`, which only the owner runs and which writes `decision.md`. Skip round 3 with `--no-decision`.
+- Write `summary.md`: the question, a table of each proxy's round 1 and round 2 position, the decision, open vetoes, required changes, and the minority report. Quote and cite file paths for every claim.
+- The minority report: The facilitator writes this, not a proxy. It lists every position that lost, quoted from the files, with the strongest version of each argument. It is never empty. If everyone agreed, it records the weakest point of agreement.
 
 ## Verdict
 Every response starts with one line after the title: `**Verdict**: <Block | Rework | Ship with changes | Ship>. <one sentence on why>.` Block means you would stop it from your seat. Rework means it must change before you would use or approve it.

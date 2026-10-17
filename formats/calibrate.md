@@ -14,3 +14,6 @@ The facilitator writes:
 - **Proposed edits**: exact changes to the proxy file fields (measured_on, hard_lines, blind_spots, voice, or the body). Each edit names the miss or false alarm it fixes.
 
 The user approves the edits before they are written. Every calibration is appended to `orgs/<org>/calibration/<handle>.md` with the date and the run folder.
+
+## Facilitator
+Do this yourself. Do not start a subagent. If the user gave no real feedback, ask for it. If `--run` is given, read that proxy's responses from the run. Show the proposed edits as a diff. After the user approves, edit the proxy file and append the entry to `orgs/<org>/calibration/<handle>.md`.
