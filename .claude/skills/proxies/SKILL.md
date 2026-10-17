@@ -1,6 +1,6 @@
 ---
 name: proxies
-description: Run proxies (simulated stakeholders for roles in an org) against Mermaid charts, wireframes, flows, specs, and designs. Commands are use, meeting, redteam, prep, followup, compare, ask, talk, calibrate, org new, new, clone, knowledge, export, import, and pages. Use when the user types /proxies or asks to run a meeting, red team, or question with the proxies in this repo.
+description: Run proxies (simulated stakeholders for roles in an org) against Mermaid charts, wireframes, flows, specs, and designs. Commands are use, meeting, redteam, prep, followup, compare, workshop, ask, talk, calibrate, org new, new, clone, knowledge, export, import, and pages. Use when the user types /proxies or asks to run a meeting, red team, or question with the proxies in this repo.
 ---
 
 # /proxies
@@ -18,6 +18,25 @@ Everything that someone reads is plain business English: responses, summaries, d
 - Explain acronyms the first time they appear.
 - When you summarize, restate each finding as the problem and its effect on the business. Do not copy a proxy's shorthand.
 - Summaries and the results page show only what the org and its proxies said and decided. Do not write about this tool, flags, format changes, bugs, or other runs. Tell the user those things in chat.
+
+## When the user does not name a command
+If the arguments are empty, are `help`, or do not start with a command, help the user choose. Do not guess and start a run.
+1. If the user described a goal, match it to one row below and propose that command. Otherwise ask what they want to do, and show the table.
+2. Check what the command needs: an org (see below), an artifact or a question, and context if the artifact belongs to a project. Ask for each missing item, one question at a time. If the repo has no orgs that fit, offer the sample orgs or `org new`.
+3. Before a run starts, confirm the plan in one line: the format, the org, who attends, the artifact, and any context. Start after the user agrees.
+
+| The user wants to | Command |
+|---|---|
+| Find where something breaks before showing it | `redteam` |
+| Get a decision, with objections and dissent recorded | `meeting` |
+| Know what questions to expect in a real meeting | `prep` |
+| Check whether a revision answered earlier objections | `followup` |
+| Choose between two versions | `compare` |
+| Generate and develop ideas, with no approval | `workshop` |
+| Ask one stakeholder a question, or talk with one | `ask`, `talk` |
+| Set up an org, a proxy, or a knowledge collection | `org new`, `new`, `knowledge new` |
+| Tune a proxy against real feedback | `calibrate` |
+| Share an org, or see results | `export`, `import`, `pages` |
 
 ## Resolve the org
 1. If `--org <id>` is present, use it.
@@ -106,6 +125,13 @@ Follow `formats/followup.md`. Read the earlier run's `meta.md` and `summary.md` 
 ### compare <artifact-a> <artifact-b> ["<question>"]
 Follow `formats/compare.md`. Copy the files to `input/a.*` and `input/b.*`. For each proxy, flip a coin to decide which file they see as "A". Record the mapping in `mapping.md`. Responses go to `01-compare/<handle>.md`. Write `summary.md`: each pick mapped back to the real file, a tally, and each proxy's reason and what they would take from the other version.
 
+### workshop "<question>" [seed...] [--vote]
+Follow `formats/workshop.md`. The question is what the proxies explore. Copy any seed files to `input/`. With no seed, write the question to `input/question.md` and use it as the artifact.
+- Round 1 → `01-ideas/<handle>.md`. Round 2 → `02-build/<handle>.md`, with every round 1 response as attributed transcripts.
+- With `--vote`: after round 2, list every idea with its author. Round 3 → `03-vote/<handle>.md`.
+- Write `summary.md`: themes, strongest ideas, open questions, and the idea worth keeping, as the format says. Attribute every idea and every build to its proxy.
+- A workshop has no owner and no verdicts. It suits a group org, but any org can run one.
+
 ### ask <handle> "<question>" [artifact...]
 Run one proxy with `formats/ask.md`. Print the answer. Save it to `runs/<date>-<org>-ask-<handle>/answer.md`.
 
@@ -155,7 +181,7 @@ Do this yourself. With no file, the org is on the clipboard from the results pag
 Each org has its own results page. Run `node scripts/runs.ts --org <org>` for every org that has runs. Republish each `runs.<org>.artifact.html` with the Artifact tool to that org's URL. Pass every screenshot of that org's runs in `files`, with the same path as on disk, such as `runs/<run>/input/screens/<file>.png`. The URLs are in `.claude/pages.local.md`, one line per org as `<org>: <url>`. That file is not committed. An org with no URL gets a new artifact. Add its URL to that file. Never publish one org's runs on another org's page.
 
 ## Report back
-The results page is the default place for results of `meeting`, `redteam`, `prep`, `followup`, and `compare`. `ask` and `talk` answer in chat.
+The results page is the default place for results of `meeting`, `redteam`, `prep`, `followup`, `compare`, and `workshop`. `ask` and `talk` answer in chat.
 - While a run is in progress, do not report each proxy or each round in chat.
 - When you write `meta.md`, run `node scripts/runs.ts --org <org>` and open `runs.<org>.html` with `open`. The page shows the run as in progress and reloads itself. Run the script again after each response, so the count goes up.
 - After the run, build the page again and open it. Then republish the org's page, as in `pages`, if the org has a URL in `.claude/pages.local.md`.

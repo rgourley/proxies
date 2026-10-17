@@ -32,7 +32,7 @@ Claude Code loads the `/proxies` skill and the proxy agent from `.claude/` when 
 
 ## Commands
 
-Run from this folder in Claude Code. Full details live in `.claude/skills/proxies/SKILL.md`.
+Run from this folder in Claude Code. Full details live in `.claude/skills/proxies/SKILL.md`. Not sure which one you need? Run `/proxies` on its own, or describe what you want, and it asks a few questions and suggests one.
 
 | Command | What it does |
 |---|---|
@@ -42,6 +42,7 @@ Run from this folder in Claude Code. Full details live in `.claude/skills/proxie
 | `/proxies prep <file>` | Each proxy's top questions |
 | `/proxies followup <run> <file>` | Check whether a revision answered their objections |
 | `/proxies compare <a> <b>` | Each proxy picks a version |
+| `/proxies workshop "<question>"` | Generate ideas, then build on and challenge each other's. No verdicts |
 | `/proxies ask <handle> "<question>"` / `talk <handle>` | Talk to one proxy |
 | `/proxies calibrate <handle>` | Tune a proxy against real feedback from someone in that role |
 | `/proxies org new <id> "<description>"` | Create a company org. Add `--group` for an ad hoc group |
@@ -118,7 +119,7 @@ Not every review is a company. An ad hoc group is an org with proxies and a purp
 /proxies org new options-panel --group "Retail and professional options traders who test trading tools"
 ```
 
-Groups use the same commands. A group has no decision owner, so a meeting needs `--no-decision` or an owner you name.
+Groups use the same commands. A group has no decision owner, so a meeting needs `--no-decision` or an owner you name. Groups suit `workshop` best: each proxy proposes ideas alone, then builds on two of the others' ideas and challenges one.
 
 ## The results page
 

@@ -96,6 +96,9 @@ const ROUND_NAMES: ReadonlyMap<string, { label: string; note: string }> = new Ma
   ["prep", { label: "Questions to expect", note: "Each proxy's top questions for the real meeting, and the answers that satisfy them." }],
   ["followup", { label: "Did the revision answer them", note: "Each proxy checked their earlier objections against the new version." }],
   ["compare", { label: "Which version they pick", note: "Each proxy saw both versions in a random order and picked one." }],
+  ["ideas", { label: "Ideas", note: "Each proxy proposed ideas alone, before they read anyone else's." }],
+  ["build", { label: "Build and challenge", note: "Each proxy read every idea, built on two, challenged one, and added any new idea the room sparked." }],
+  ["vote", { label: "Vote", note: "Each proxy ranked the ideas they would take forward." }],
 ]);
 
 function roundName(folder: string): { label: string; note: string } {
@@ -287,7 +290,7 @@ function latestVerdicts(run: Run): Map<string, Verdict | null> {
 
 function output(item: Output, org: Org): string {
   const p = item.proxy;
-  const verdict = item.verdict ? VERDICT_LABEL.get(item.verdict) ?? "" : "No verdict";
+  const verdict = verdictWord(item.verdict);
   return `<details class="output" style="--seat:${seatColor(p.seat)}">
     <summary>
       <span class="status-icon ${item.verdict ? `v-${item.verdict}` : ""}" title="${esc(verdict)}" aria-label="${esc(verdict)}"></span>
@@ -325,8 +328,9 @@ function threads(run: Run): Thread[] {
   return [...byHandle.values()].sort((a, b) => verdictRank(latest(a)) - verdictRank(latest(b)) || a.proxy.name.localeCompare(b.proxy.name));
 }
 
+// A workshop response has no verdict, so the row shows no verdict text.
 function verdictWord(verdict: Verdict | null): string {
-  return verdict ? VERDICT_LABEL.get(verdict) ?? "" : "No verdict";
+  return verdict ? VERDICT_LABEL.get(verdict) ?? "" : "";
 }
 
 // The row shows the verdict in each round, so a reader sees who changed position without opening it.
@@ -334,7 +338,7 @@ function thread(t: Thread, org: Org): string {
   const p = t.proxy;
   const latest = t.steps[t.steps.length - 1].output.verdict;
   const changed = new Set(t.steps.map((s) => s.output.verdict)).size > 1;
-  const path = t.steps
+  const path = t.steps.every((s) => s.output.verdict === null) ? "" : t.steps
     .map((s) => `<span class="verdict-text ${s.output.verdict ? `v-${s.output.verdict}` : ""}" title="${esc(s.round.label)}">${esc(verdictWord(s.output.verdict))}</span>`)
     .join(`<span class="arrow" aria-hidden="true">→</span>`);
   return `<details class="output thread" style="--seat:${seatColor(p.seat)}">
