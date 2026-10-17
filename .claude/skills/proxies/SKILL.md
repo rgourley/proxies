@@ -82,7 +82,9 @@ Knowledge is what proxies know. The artifact is what they judge. Never put an ar
 - **Context** is knowledge that every proxy in one run reads first, such as the spec for the project under review: `context: <id>` in the run's `meta.md`. Use context when the user names a project, or when the artifact belongs to a project that has a collection. Ask when you are not sure.
 
 ## Run folder
-Create `runs/<YYYY-MM-DD>-<org>-<format>-<slug>/`. Copy the artifact files to `input/`. Copy screenshots to `input/screens/`, and refer to them in the artifact as `Screenshot: screens/<file>.png`. Resize each copy so its long side is at most 1200 pixels, with `sips -Z 1200 <file>` on macOS. Never resize the original. Write `meta.md` first, with this frontmatter and no body:
+Create `runs/<YYYY-MM-DD>-<org>-<format>-<slug>/`. Copy the artifact files to `input/`. Copy screenshots to `input/screens/`, and refer to them in the artifact as `Screenshot: screens/<file>.png`. Resize each copy so its long side is at most 1200 pixels, with `sips -Z 1200 <file>` on macOS. Never resize the original.
+
+When the artifact has screenshots, write a screen description before round 1. Launch one `describer` subagent with the artifact path and the output path `input/screens.md`. It writes every visible word and control on each screenshot, and no opinions. Check that it described every screenshot that the artifact lists. Then give each proxy `input/screens.md` in the ARTIFACT block, and the screenshot folder as a path to open only when a point depends on how a screen looks. With `--images`, skip the description and give the proxies the screenshots only. Write `meta.md` first, with this frontmatter and no body:
 
 ```
 ---

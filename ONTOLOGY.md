@@ -31,6 +31,7 @@ These are the names for every part of Proxies. Use these terms in files, code, c
 | Term | Definition | Where it lives |
 |---|---|---|
 | **Artifact** | The thing under review: a flow, a spec, a prototype, or screenshots. It is copied into the run. | `runs/<run>/input/` |
+| **Screen description** | A word-for-word text record of every screenshot in an artifact, written once per run by the `describer` agent on a cheaper model. Proxies read it instead of the images. It holds no opinions. | `runs/<run>/input/screens.md` |
 | **Format** | A review procedure, such as `redteam`, `meeting`, or `prep`. | `formats/<format>.md` |
 | **Command** | One `/proxies` action. Some commands run a format. Others manage orgs, proxies, and knowledge. | `.claude/skills/proxies/SKILL.md` |
 | **Run** | One use of a format: the proxies, the artifact, and any context. | `runs/<run>/` |

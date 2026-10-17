@@ -63,6 +63,7 @@ Flags for the run commands:
 | `--no-decision` | End a meeting after the rebuttals, with no decision round |
 | `--wordy` | Drop the word targets, so each proxy writes at full length |
 | `--noui` | Show the results in chat and do not open the page |
+| `--images` | Give proxies the screenshots instead of a text description of them |
 
 After a run, the results page opens by default. Chat shows only the verdict and the run folder.
 
