@@ -2,23 +2,20 @@
 
 # Proxies: simulated stakeholder reviews in Claude Code
 
-A simulated room of stakeholders you run an idea, prototype, or design concept past before the real meeting. Each proxy has a card: role, incentives, hard lines, blind spots, voice. You give them a flow, spec, or prototype, and each one tells you where it breaks for them.
+A simulated room of stakeholders you run an idea, prototype, or design past before the real meeting. Each proxy has a card: role, incentives, hard lines, blind spots, voice. Give them a flow, spec, or prototype, and each one tells you where it breaks for them, in plain business English. A proxy stands in for a role, not a real individual.
 
-A proxy stands in for a role, not for a real individual. It shows the concerns that role would likely raise.
+<img width="1054" height="757" alt="Screenshot 2026-10-14 at 2 33 48 PM" src="https://github.com/user-attachments/assets/9957a5a7-6f9f-4307-8e15-f7922365131c" />
 
-<img width="1054" height="757" alt="Screenshot 2026-10-14 at 2 33 48 PM" src="https://github.com/user-attachments/assets/9957a5a7-6f9f-4307-8e15-f7922365131c" />
+## Why not five personas in one prompt
 
-## Why not just ask for five personas in one prompt
-
-- Each proxy runs as a separate agent that sees only their own card, so they don't blur into one agreeable voice.
-- Proxies are saved and reused, and you can tune them against real feedback from customers and stakeholders in those roles.
-- They review against the real spec and decision docs, not a stale draft.
-- Formats force an outcome: blind positions, then rebuttals, then a decision, with the dissent recorded.
-- Every run lands on one results page: who blocks, what's critical, what fixes it. See [The results page](#the-results-page).
+- Each proxy runs as a separate agent that sees only its own card, so they don't blur into one agreeable voice.
+- Proxies are saved, reused, and tuned against real feedback from people in those roles.
+- They read your actual spec and decision docs before they review.
+- Every run ends with a verdict per proxy (Block, Rework, Ship), ranked findings, and the fixes that clear the most blocks, on one results page.
 
 ## Setup
 
-You need Node 22 or later and Claude Code. There is nothing to install.
+You need Node 22 or later and Claude Code. Nothing to install.
 
 ```bash
 git clone https://github.com/rgourley/proxies.git
@@ -26,138 +23,90 @@ cd proxies
 claude
 ```
 
-Claude Code loads the `/proxies` skill and the proxy agent from `.claude/` when it starts in this folder. Start a new session after you clone or pull, so it picks up changes to either. Then run `/proxies use tilt` to check that it works.
+Claude Code loads the `/proxies` skill and its agents from `.claude/` when it starts in this folder. Start a new session after you clone or pull. Run `/proxies use tilt` to check that it works.
 
-<img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
+<img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
 
 ## Commands
 
-Run from this folder in Claude Code. Full details live in `.claude/skills/proxies/SKILL.md`. Not sure which one you need? Run `/proxies` on its own, or describe what you want, and it asks a few questions and suggests one.
+Not sure which one you need? Run `/proxies` on its own, or describe what you want. It asks a few questions and suggests one.
 
 | Command | What it does |
 |---|---|
-| `/proxies use <org>` | Pick the org and list its proxies |
-| `/proxies redteam <file> "<scenario>"` | Everyone tries to break it. Add `--premortem` to have them imagine it already failed and say why |
-| `/proxies meeting <file> "<question>"` | Debate, then the decision owner calls it |
-| `/proxies prep <file>` | Each proxy's top questions |
-| `/proxies followup <run> <file>` | Check whether a revision answered their objections |
-| `/proxies compare <a> <b>` | Each proxy picks a version |
-| `/proxies workshop "<question>"` | Generate ideas, then build on and challenge each other's. No verdicts |
-| `/proxies ask <handle> "<question>"` / `talk <handle>` | Talk to one proxy |
-| `/proxies calibrate <handle>` | Tune a proxy against real feedback from someone in that role |
-| `/proxies org new <id> "<description>"` | Create a company org. Add `--group` for an ad hoc group |
-| `/proxies new <handle> <seat>` | Add a proxy to the active org |
-| `/proxies clone <handle> --to <org>` | Copy a proxy into another org and adapt them |
-| `/proxies knowledge new <id>` / `add <id> <url or file>` / `refresh <id>` | Build a knowledge collection |
-| `/proxies export <org>` / `import <file>` | Share an org as one JSON file |
-| `/proxies pages` | Rebuild and republish the results page |
+| `redteam <file> "<scenario>"` | Everyone tries to break it. `--premortem`: they imagine it already failed and say why |
+| `meeting <file> "<question>"` | Blind round, rebuttals, then the decision owner calls it, with dissent recorded |
+| `workshop "<question>"` | Each proxy proposes ideas, then builds on and challenges the others'. No verdicts |
+| `prep <file>` | Each proxy's top questions for the real meeting |
+| `followup <run> <file>` | Check whether a revision answered their objections |
+| `compare <a> <b>` | Each proxy picks a version |
+| `ask <handle> "<question>"`, `talk <handle>` | Talk to one proxy |
+| `use <org>`, `org new`, `new`, `clone`, `calibrate` | Pick, build, and tune orgs and proxies (see below) |
+| `knowledge new`, `add`, `refresh` | Build a knowledge collection (see below) |
+| `export <org>`, `import <file>`, `pages` | Share an org as one JSON file, and publish results |
 
-Flags for the run commands:
+Every command starts with `/proxies`. Flags: `--org <id>` uses another org. `--use <id>` or `--with a,b,c` picks the attendees. `--dissenter <handle>` makes one proxy hold their position. `--no-decision` ends a meeting after the rebuttals. `--wordy` drops the word targets. `--images` gives proxies screenshots instead of a text description. `--noui` shows results in chat instead of the page.
 
-| Flag | What it does |
-|---|---|
-| `--org <id>` | Use this org instead of the active one |
-| `--use <id>` | Invite only the proxies whose `uses` list has this use case |
-| `--with a,b,c` | Invite exactly these proxies. Overrides `--use` |
-| `--dissenter <handle>` | This proxy holds their position unless someone answers their block |
-| `--no-decision` | End a meeting after the rebuttals, with no decision round |
-| `--wordy` | Drop the word targets, so each proxy writes at full length |
-| `--noui` | Show the results in chat and do not open the page |
-| `--images` | Give proxies the screenshots instead of a text description of them |
+## Orgs and groups
 
-After a run, the results page opens by default. Chat shows only the verdict and the run folder.
+An org is the set of proxies who review together. It comes in two types:
 
-All feedback is in plain business English.
+- **Company** (`type: company`): a business with rules, culture, and decision rights. Proxies are stakeholders: an approver, a veto holder, a decision owner. Use it to rehearse how a real organization decides.
+- **Group** (`type: group`): an ad hoc set of proxies with a purpose, and no business or decision rights. Use it for a design critique, a panel of users, or a room of specialists.
 
-## Making your own org and proxies
+Six fictional orgs ship with the repo:
 
-Describe the company, and Claude drafts the org:
+| Org | Type | Who is in it | Sample runs |
+|---|---|---|---|
+| `tilt` | Company | A software company: product, engineering, sales, support, AI, and a customer | Red team and premortem of a guest-sharing flow |
+| `brightpath` | Company | A 14-site clinic network, with privacy and accessibility | None |
+| `northpine` | Company | A game studio running one live game | None |
+| `design-crit` | Group | A cross-discipline critique: product, content, accessibility, front end, and a first-time user | Red team of a sign-up flow |
+| `user-panel` | Group | Five small business users who differ in device, time, and language | Red team of the same sign-up flow |
+| `options-panel` | Group | A new trader, a veteran trader, an educator, and a compliance officer | Workshop on how a new trader learns options |
 
-```
-/proxies org new acme "Mid-size insurer, 4,000 staff, buying a claims tool. Regulated by state insurance boards. IT and compliance can veto vendors."
-```
+`design-crit` and `user-panel` reviewed the same sign-up flow, so you can compare what experts catch with where users quit. See any org's runs with `npm run pages -- --org <org>`, then open `runs.<org>.html`.
 
-It writes `orgs/acme/org.md`: the business, rules, culture, who decides what, and the company's vocabulary. Anything it guessed is marked "(assumed)", and you see the draft before it saves.
+## Make your own
 
-Then add proxies one at a time. Each gets a handle and a seat, which is the role template they start from:
+Describe the company or group, and Claude drafts it. Anything it guessed is marked "(assumed)", and you see the draft before it saves.
 
 ```
-/proxies use acme
+/proxies org new acme "Mid-size insurer buying a claims tool. IT and compliance can veto vendors."
+/proxies org new crit --group "Design critique for our checkout"
 /proxies new dana compliance
 ```
 
-Claude asks for the name and title and drafts the rest. The seats live in `seats/`, and you can add your own. `/proxies clone dana --to acme` adapts a proxy from another org.
+`new` takes a handle and a seat, the role template in `seats/` that the proxy starts from. Add your own seats as markdown files. `clone dana --to acme` adapts a proxy from another org. Each proxy has a decision level: `owner` decides, `veto` can block, `approve` must sign off, `consult` gives input, `inform` is kept in the loop. In a group, everyone is `consult` unless you say otherwise. Everything is plain markdown, so you can also copy `orgs/tilt/` or `orgs/design-crit/` and edit by hand.
 
-Each proxy has a `decision` level: `owner` decides, `veto` can block, `approve` must sign off, `consult` gives input, and `inform` is kept in the loop. Everything is plain markdown, so you can also edit the files by hand. Copy `orgs/tilt/` to start.
+When you get real feedback from someone in a proxy's role, such as a customer interview, run `/proxies calibrate dana "what they said"`. Claude compares it with the proxy's responses, proposes edits, and logs the change.
 
-When you get real feedback from someone in a proxy's role, such as a customer interview, run `/proxies calibrate dana "what they said"`. Claude compares it with the proxy's responses, proposes edits to the proxy file, and logs the change.
-
-Each proxy gets a generated avatar in the style of the Proxies illustration. The pronouns on the card choose the hair and clothes, and the same proxy always gets the same avatar. To set it yourself, add any of these to the proxy file: `avatar_hair` (bob, bun, ponytail, long, short, curls, scarf, side, buzz, bald, receding, quiff), `avatar_top` (blazer, suit, turtleneck, vneck, dress), `avatar_facial_hair` (none, beard, mustache, stubble), and `avatar_glasses` (none, round, square). To get a different random avatar, add `avatar_seed` with any text.
+Each proxy gets a generated avatar, chosen by its pronouns and fixed per proxy. Set it with `avatar_hair`, `avatar_top`, `avatar_facial_hair`, and `avatar_glasses` in the proxy file, or reroll it with `avatar_seed`.
 
 ## Knowledge
 
-Knowledge is what proxies know. The artifact is what they judge. The two never mix: knowledge lives in `knowledge/`, and the artifact is copied into each run's `input/` folder.
+Knowledge is what proxies know. The artifact is what they judge. The two never mix: knowledge lives in `knowledge/<id>/`, and the artifact is copied into each run.
 
-A collection is one folder: `index.md` says what it is and lists its key points, each tied to a source, and `sources/` holds a saved copy of each document with its link and last-edited date. Proxies read the index first and open a source only when a point depends on it.
+A collection has an `index.md` with its key points and a list of sources marked **Required** or **When needed**, and a `sources/` folder with a saved copy of each document, its link, and its last-edited date.
 
 ```
 /proxies knowledge new cardiology-trials "Phase 3 trials for the drugs in our intake flow"
 /proxies knowledge add cardiology-trials https://example.org/trial-a.pdf ~/research/trial-b.md
 ```
 
-A collection is used in one of two ways:
+Use a collection in one of two ways:
 
-- **Expertise.** `knows: [cardiology-trials]` on a proxy, or in `org.md` for everyone, means they know it. They apply it and cite it, but they don't review it. Proxies without it don't get it, so the cardiologist and the compliance officer in the same run know different things.
-- **Context.** `context: cardiology-trials` in a run's `meta.md` means every proxy in that run reads it before the review. Use this for the spec of the project under review.
+- **Expertise:** `knows: [cardiology-trials]` on a proxy, or in `org.md` for everyone. They apply it and cite it, but don't review it. Proxies without it don't get it, so the cardiologist and the compliance officer in one run know different things.
+- **Context:** `context: cardiology-trials` in a run's `meta.md`. Every proxy in the run reads it first. Use this for the spec of the project under review.
 
-The same collection can be expertise in one run and context in another. `/proxies knowledge refresh <id>` pulls every source again from its link.
+`/proxies knowledge refresh <id>` pulls every source again from its link.
 
-## Groups
+## Results and sharing
 
-Not every review is a company. An ad hoc group is an org with proxies and a purpose, and no business, culture, or decision rights:
+The results page opens after every run. Each run shows who blocks, the ranked findings, what to fix first, and every proxy's full response. Click any name for that proxy's card. `/proxies pages` publishes each org's page as a private Claude artifact that you share from its Share menu.
 
-```
-/proxies org new options-panel --group "Retail and professional options traders who test trading tools"
-```
+To share an org, `/proxies export <org>` writes one JSON file with its proxies, calibration logs, and seats. The page's **Export** button copies the same JSON. `/proxies import <file>`, or `import` with no file to read the clipboard on macOS, never overwrites an org: add `--as <new-id>` for a second copy.
 
-Groups use the same commands. A group has no decision owner, so a meeting needs `--no-decision` or an owner you name. Groups suit `workshop` best: each proxy proposes ideas alone, then builds on two of the others' ideas and challenges one.
-
-## The results page
-
-The page opens on its own after every run. To build and open it by hand:
-
-```bash
-npm run pages
-open runs.html
-```
-
-Each run shows who blocks, the ranked findings, what to fix first, and every proxy's full response. Click any name to open that proxy's card. `npm run pages -- --org tilt` builds a page with one org. `/proxies pages` republishes it as a private Claude artifact that you share from its Share menu.
-
-## Sharing an org
-
-An org exports to one JSON file with its proxies, their calibration logs, and the seats they use:
-
-```bash
-npm run export-org -- tilt
-npm run import-org -- tilt.proxies.json
-```
-
-In Claude Code, use `/proxies export tilt` and `/proxies import tilt.proxies.json`. The page's **Export** button copies the same JSON, and `/proxies import` with no file reads it from the clipboard on macOS.
-
-The import never overwrites an existing org. Add `--as <new-id>` to import it under another name. If a seat differs from your copy, the import stops and names it.
-
-## Sample orgs
-
-Four fictional orgs ship with the repo so you can try it right away. `tilt` is a SaaS company that makes a project planning tool. `brightpath` is a 14-site clinic network. `northpine` is a game studio that runs one live game and is building its next one. `options-panel` is a group: a new trader, a veteran trader, an educator, and a compliance officer.
-
-Three sample runs show the output: a Tilt red team and a Tilt premortem of a guest-sharing flow, and an options-panel workshop on how a retail trader should learn options. Run `npm run pages -- --org tilt` and open `runs.tilt.html` to see them. Bring your own artifact for anything else:
-
-```
-/proxies use tilt
-/proxies redteam path/to/your-flow.mmd "an agency invites 30 client reviewers"
-```
-
-Git does not keep a client org out of the repo by default. List client orgs, knowledge, and runs in `.git/info/exclude`. That file stays on your machine and is never pushed:
+Git does not keep client work out of the repo on its own. List client orgs, knowledge, and runs in `.git/info/exclude`, which stays on your machine:
 
 ```
 orgs/acme/
@@ -165,36 +114,24 @@ knowledge/acme-*/
 runs/*acme*/
 ```
 
-## Layout
+## How it works
 
-[ONTOLOGY.md](ONTOLOGY.md) defines every term below.
+[ONTOLOGY.md](ONTOLOGY.md) defines every term.
 
 ```
 seats/                  role templates that every org reuses
-orgs/<org>/org.md       the org: type, business, rules, culture, decision rights, vocabulary
-orgs/<org>/proxies/     one file per proxy; frontmatter feeds the card
-orgs/<org>/calibration/ one log per proxy: real feedback, misses, and the edits they caused
-knowledge/<id>/         a collection: index.md plus sources/
-formats/                the review procedures, each with a Facilitator section: meeting, redteam, prep,
-                        followup, compare, workshop, ask/talk, calibrate
-runs/<run>/             meta.md, input/ (the artifact and its screens.md), prompts/, one folder per round, summary.md
-scripts/                brief.ts (prompts), check.ts (run checks), runs.ts (results page), identity.ts,
-                        export-org.ts and import-org.ts
+orgs/<org>/             org.md, proxies/ (one file per proxy), calibration/
+knowledge/<id>/         index.md and sources/
+formats/                each review procedure, with a Facilitator section
+runs/<run>/             meta.md, input/ (the artifact), prompts/, one folder per round, summary.md
+scripts/                brief.ts (prompts), check.ts (run checks), runs.ts (results page), export and import
 .claude/agents/         proxy.md (one proxy per subagent) and describer.md (screen descriptions)
-.claude/skills/proxies/ SKILL.md (what every run needs) and manage.md (org, proxy, knowledge, and page commands)
+.claude/skills/proxies/ SKILL.md (every run) and manage.md (org, proxy, knowledge, and page commands)
 ```
 
-A proxy's prompt is its seat, then `org.md`, then its proxy file, then any expertise, then the round's instructions. Later layers win. `npm run brief` writes the prompts, and `npm run check` checks every run.
+A proxy's prompt layers its seat, its org, its own card, any expertise, and the round's instructions. Later layers win. `npm run check` checks every run, and the facilitator fact-checks each summary against the responses before it reports.
 
-## What a run costs
-
-A 12-proxy review of 50 screenshots used to cost about 2.6 million tokens. Three things bring it to about 0.85 million on the main model, plus 0.16 million on a cheaper one:
-
-- A `describer` agent on a cheaper model writes down every word and control on each screenshot once. Proxies read that text instead of the images, and open a screenshot only when a point depends on how it looks. Pass `--images` to skip it.
-- Proxies read a collection's index and its **Required** sources first, and open other sources only when a point depends on them.
-- Screenshots are resized to 1200 pixels wide when they are copied into a run.
-
-The proxies themselves run on your session's model, because judgment is where quality matters.
+Runs are built to be cheap. A `describer` agent on a cheaper model writes down every word on each screenshot once, and proxies read that text instead of the images. Proxies read a collection's index and Required sources, and open the rest only when a point depends on it. A 12-proxy review of 50 screenshots dropped from about 2.6 million tokens to 0.85 million on the main model, plus 0.16 million on the cheaper one. The proxies themselves run on your session's model, because judgment is where quality matters.
 
 ## License
 
