@@ -6,10 +6,10 @@ export type BundleFile = { name: string; text: string };
 
 export type OrgBundle = {
   format: "proxies-org";
-  version: 1;
+  version: 2;
   org: string;
   orgFile: string;
-  people: BundleFile[];
+  proxies: BundleFile[];
   calibration: BundleFile[];
   seats: BundleFile[];
 };
@@ -22,9 +22,9 @@ function mdFiles(dir: string): BundleFile[] {
     .map((f) => ({ name: f, text: readFileSync(join(dir, f), "utf8") }));
 }
 
-function seatOf(person: BundleFile): string {
-  const match = person.text.match(/^seat:\s*(\S+)/m);
-  if (!match) throw new Error(`No seat in person file ${person.name}`);
+function seatOf(proxy: BundleFile): string {
+  const match = proxy.text.match(/^seat:\s*(\S+)/m);
+  if (!match) throw new Error(`No seat in proxy file ${proxy.name}`);
   return match[1];
 }
 
@@ -32,9 +32,9 @@ export function orgBundle(root: string, org: string): OrgBundle {
   const dir = join(root, "orgs", org);
   const orgFile = join(dir, "org.md");
   if (!existsSync(orgFile)) throw new Error(`Org not found: ${orgFile}`);
-  const people = mdFiles(join(dir, "people"));
-  if (people.length === 0) throw new Error(`Org ${org} has no people in ${join(dir, "people")}`);
-  const seatIds = [...new Set(people.map(seatOf))].sort();
+  const proxies = mdFiles(join(dir, "proxies"));
+  if (proxies.length === 0) throw new Error(`Org ${org} has no proxies in ${join(dir, "proxies")}`);
+  const seatIds = [...new Set(proxies.map(seatOf))].sort();
   const seats = seatIds.map((id) => {
     const file = join(root, "seats", `${id}.md`);
     if (!existsSync(file)) throw new Error(`Seat ${id} is used by org ${org} but ${file} does not exist`);
@@ -42,10 +42,10 @@ export function orgBundle(root: string, org: string): OrgBundle {
   });
   return {
     format: "proxies-org",
-    version: 1,
+    version: 2,
     org,
     orgFile: readFileSync(orgFile, "utf8"),
-    people,
+    proxies,
     calibration: mdFiles(join(dir, "calibration")),
     seats,
   };

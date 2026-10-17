@@ -8,7 +8,7 @@ export type Decision = "owner" | "veto" | "approve" | "consult" | "inform";
 
 export type Section = { heading: string; paragraphs: string[] };
 
-export type Person = {
+export type Proxy = {
   handle: string;
   name: string;
   pronouns: string;
@@ -31,10 +31,10 @@ export type Person = {
 
 export type UseCase = { id: string; label: string };
 
-// A company org has a business, rules, culture, and decision rights. A group org is an ad hoc set of people with a purpose.
+// A company org has a business, rules, culture, and decision rights. A group org is an ad hoc set of proxies with a purpose.
 export type OrgType = "company" | "group";
 
-export type Org = { id: string; type: OrgType; name: string; tagline: string; note: string; useCases: UseCase[]; knows: string[]; people: Person[] };
+export type Org = { id: string; type: OrgType; name: string; tagline: string; note: string; useCases: UseCase[]; knows: string[]; proxies: Proxy[] };
 
 export type Frontmatter = Map<string, string | string[]>;
 
@@ -161,7 +161,7 @@ function optionalText(fields: Frontmatter, key: string): string | null {
   return typeof value === "string" ? value : null;
 }
 
-function readPerson(file: string): Person {
+function readProxy(file: string): Proxy {
   const { fields, body } = parse(readFileSync(file, "utf8"), file);
   const org = text(fields, "org", file);
   const handle = text(fields, "handle", file);
@@ -197,24 +197,24 @@ function readPerson(file: string): Person {
 export function readOrg(id: string): Org {
   const orgFile = join(ORGS_DIR, id, "org.md");
   const { fields, body } = parse(readFileSync(orgFile, "utf8"), orgFile);
-  const peopleDir = join(ORGS_DIR, id, "people");
-  const people = existsSync(peopleDir)
-    ? readdirSync(peopleDir)
+  const proxiesDir = join(ORGS_DIR, id, "proxies");
+  const proxies = existsSync(proxiesDir)
+    ? readdirSync(proxiesDir)
         .filter((f) => f.endsWith(".md"))
-        .map((f) => readPerson(join(peopleDir, f)))
+        .map((f) => readProxy(join(proxiesDir, f)))
         .sort((a, b) => DECISION_ORDER.indexOf(a.decision) - DECISION_ORDER.indexOf(b.decision) || a.name.localeCompare(b.name))
     : [];
   const note = body.split(/\n\s*\n/)[0]?.trim() ?? "";
   const useCases = optionalList(fields, "use_cases", orgFile).map((item) => useCase(item, orgFile));
   const known = new Set(useCases.map((u) => u.id));
-  for (const person of people) {
-    const unknown = person.uses.filter((u) => !known.has(u));
-    if (unknown.length > 0) throw new Error(`${person.handle} in ${id} uses unknown use cases: ${unknown.join(", ")}. Known: ${[...known].join(", ")}`);
+  for (const proxy of proxies) {
+    const unknown = proxy.uses.filter((u) => !known.has(u));
+    if (unknown.length > 0) throw new Error(`${proxy.handle} in ${id} uses unknown use cases: ${unknown.join(", ")}. Known: ${[...known].join(", ")}`);
   }
   const knows = optionalList(fields, "knows", orgFile);
   checkKnowledge(knows, orgFile);
-  for (const person of people) checkKnowledge(person.knows, join(peopleDir, `${person.handle}.md`));
-  return { id, type: orgType(fields, orgFile), name: text(fields, "name", orgFile), tagline: text(fields, "tagline", orgFile), note, useCases, knows, people };
+  for (const proxy of proxies) checkKnowledge(proxy.knows, join(proxiesDir, `${proxy.handle}.md`));
+  return { id, type: orgType(fields, orgFile), name: text(fields, "name", orgFile), tagline: text(fields, "tagline", orgFile), note, useCases, knows, proxies };
 }
 
 export function readOrgs(): Org[] {
@@ -227,19 +227,19 @@ export function esc(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Every person shows as a generated avatar. Each page draws an avatar once, in avatarSprite, and every place
-// that shows the person points at it with <use>. The SVG scales to the size of its container.
-function avatarId(person: Person): string {
-  return `av-${person.org}-${person.handle}`;
+// Every proxy shows as a generated avatar. Each page draws an avatar once, in avatarSprite, and every place
+// that shows the proxy points at it with <use>. The SVG scales to the size of its container.
+function avatarId(proxy: Proxy): string {
+  return `av-${proxy.org}-${proxy.handle}`;
 }
 
-export function face(person: Person): string {
-  return `<svg viewBox="0 0 100 100" style="border-radius:50%;overflow:hidden" aria-hidden="true"><use href="#${avatarId(person)}"/></svg>`;
+export function face(proxy: Proxy): string {
+  return `<svg viewBox="0 0 100 100" style="border-radius:50%;overflow:hidden" aria-hidden="true"><use href="#${avatarId(proxy)}"/></svg>`;
 }
 
-// The sprite holds one symbol per person. It is hidden with a zero size, not display none, so its filters still work.
-export function avatarSprite(people: Person[]): string {
-  return `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${people.map((p) => avatarSymbol(p.avatar, avatarId(p))).join("")}</svg>`;
+// The sprite holds one symbol per proxy. It is hidden with a zero size, not display none, so its filters still work.
+export function avatarSprite(proxies: Proxy[]): string {
+  return `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${proxies.map((p) => avatarSymbol(p.avatar, avatarId(p))).join("")}</svg>`;
 }
 
 export function seatLabel(seat: string): string {
@@ -250,8 +250,8 @@ export function seatColor(seat: string): string {
   return SEAT_COLORS.get(seat) ?? FALLBACK_COLOR;
 }
 
-export function cardId(person: Person): string {
-  return `${person.org}-${person.handle}`;
+export function cardId(proxy: Proxy): string {
+  return `${proxy.org}-${proxy.handle}`;
 }
 
 export const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -260,7 +260,7 @@ export const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"
 // The logo is the wordmark in Young Serif with a red dot. The text takes the page's ink color, so it reads in both themes.
 export const LOGO = `<svg class="logo" viewBox="0 0 300 90" role="img" aria-label="Proxies"><text x="4" y="70" font-family="'Young Serif', Georgia, serif" font-size="68" letter-spacing="-1" fill="currentColor">Proxies</text><circle cx="268" cy="27" r="7" fill="#ee4b2b"/></svg>`;
 
-// Labels name the person's standing in the org, not anything they did in a run.
+// Labels name the proxy's standing in the org, not anything they did in a run.
 export const DECISION_LABEL: ReadonlyMap<Decision, string> = new Map([
   ["owner", "Decision owner"],
   ["veto", "Veto holder"],
@@ -315,10 +315,10 @@ code { font: 12.5px var(--font-mono); background: var(--panel); padding: 2px 6px
 .side > *, .nav-groups > * { min-width: 0; }
 .side { overflow-x: hidden; }
 .nav-group { display: grid; gap: 2px; min-width: 0; }
-.nav-group a, .nav-group button.nav-person { min-width: 0; }
+.nav-group a, .nav-group button.nav-proxy { min-width: 0; }
 .nav-label { margin: 0 0 4px; padding-inline: 8px; font: 500 11px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.nav-group a, .nav-group button.nav-person { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 8px; border-radius: 6px; text-decoration: none; color: var(--ink-2); font-size: 14px; border-left: 2px solid transparent; }
-.nav-group a:hover, .nav-group button.nav-person:hover { background: var(--hover); color: var(--ink); }
+.nav-group a, .nav-group button.nav-proxy { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 8px; border-radius: 6px; text-decoration: none; color: var(--ink-2); font-size: 14px; border-left: 2px solid transparent; }
+.nav-group a:hover, .nav-group button.nav-proxy:hover { background: var(--hover); color: var(--ink); }
 .nav-group .nav-meta { margin-left: auto; font: 11.5px var(--font-mono); color: var(--muted); }
 .content { min-width: 0; padding-inline: 32px; padding-block: 32px 96px; }
 .side-toggle { margin-left: auto; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--card); cursor: pointer; }
@@ -419,7 +419,7 @@ document.addEventListener("click", (event) => {
 const ICONS = {
   brand: '<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',
   runs: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
-  people: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  proxies: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>',
   theme: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/>',
 } as const;
@@ -428,19 +428,19 @@ export function icon(name: keyof typeof ICONS, size: number): string {
   return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 }
 
-// The sidebar has two lists: runs and people. The People and Runs tabs switch which list shows. Runs is the default.
+// The sidebar has two lists: runs and proxies. The Proxies and Runs tabs switch which list shows. Runs is the default.
 // The tab icon is the wordmark's first letter. It uses fixed colors, because a data URI cannot read the page's tokens.
 export const FAVICON = `<link rel="icon" href="data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#111112"/><text x="16" y="23" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#fff">P</text></svg>')}">`;
 
-export function sidebar(runsList: string, peopleList: string): string {
+export function sidebar(runsList: string, proxiesList: string): string {
   return `<aside class="side">
   <div class="brand"><span class="brand-name">Library</span><button type="button" class="theme-toggle" aria-label="Switch theme" title="Switch theme">${icon("theme", 15)}</button><button type="button" class="side-toggle" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">${icon("panel", 16)}</button></div>
   <div class="tabs" role="tablist" aria-label="Sidebar lists">
     <button type="button" role="tab" id="tab-runs" aria-controls="panel-runs" aria-selected="true" data-panel="runs">${icon("runs", 13)}Runs</button>
-    <button type="button" role="tab" id="tab-people" aria-controls="panel-people" aria-selected="false" data-panel="people">${icon("people", 13)}People</button>
+    <button type="button" role="tab" id="tab-proxies" aria-controls="panel-proxies" aria-selected="false" data-panel="proxies">${icon("proxies", 13)}Proxies</button>
   </div>
   <div class="nav-groups" id="panel-runs" role="tabpanel" aria-labelledby="tab-runs">${runsList}</div>
-  <div class="nav-groups" id="panel-people" role="tabpanel" aria-labelledby="tab-people" hidden>${peopleList}</div>
+  <div class="nav-groups" id="panel-proxies" role="tabpanel" aria-labelledby="tab-proxies" hidden>${proxiesList}</div>
 </aside>`;
 }
 
@@ -456,21 +456,21 @@ ${body}
 `;
 }
 
-// The person modal. The page keeps every card in a template. A click on any [data-person] element opens that card.
-export const PERSON_SCRIPT = `<script>
+// The proxy modal. The page keeps every card in a template. A click on any [data-proxy] element opens that card.
+export const PROXY_SCRIPT = `<script>
 (() => {
-  const dialog = document.getElementById("person-dialog");
+  const dialog = document.getElementById("proxy-dialog");
   const body = dialog.querySelector(".dialog-body");
-  // The arrow keys move through the people around the card that was clicked:
-  // the run's attendee row, the org's list in the sidebar, or every person on the page.
-  let people = [];
+  // The arrow keys move through the proxies around the card that was clicked:
+  // the run's attendee row, the org's list in the sidebar, or every proxy on the page.
+  let proxies = [];
   let current = -1;
   const unique = (ids) => [...new Set(ids)];
-  const peopleNear = (trigger, id) => {
+  const proxiesNear = (trigger, id) => {
     const run = trigger.closest(".run");
-    const group = trigger.closest(".org-group, .org-people");
+    const group = trigger.closest(".org-group, .org-proxies");
     const scope = run ? run.querySelector(".attendees") : group;
-    const ids = scope ? unique([...scope.querySelectorAll("[data-person]")].map((el) => el.dataset.person)) : [];
+    const ids = scope ? unique([...scope.querySelectorAll("[data-proxy]")].map((el) => el.dataset.proxy)) : [];
     if (ids.includes(id)) return ids;
     return [...document.querySelectorAll("template[id^='tpl-']")].map((t) => t.id.slice(4)).filter((x) => !x.startsWith("org-"));
   };
@@ -482,22 +482,22 @@ export const PERSON_SCRIPT = `<script>
     return true;
   };
   const open = (id, trigger) => {
-    people = id.startsWith("org-") ? [] : peopleNear(trigger, id);
-    current = people.indexOf(id);
+    proxies = id.startsWith("org-") ? [] : proxiesNear(trigger, id);
+    current = proxies.indexOf(id);
     show(id);
   };
   document.addEventListener("keydown", (event) => {
-    if (!dialog.open || current < 0 || people.length < 2) return;
+    if (!dialog.open || current < 0 || proxies.length < 2) return;
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    current = (current + (event.key === "ArrowRight" ? 1 : -1) + people.length) % people.length;
-    show(people[current]);
+    current = (current + (event.key === "ArrowRight" ? 1 : -1) + proxies.length) % proxies.length;
+    show(proxies[current]);
   });
   // A card opened with the mouse clears focus when it closes, so the name's hover card does not stay open.
   // A card opened with the keyboard keeps focus on the name, so keyboard users do not lose their place.
   let openedWithPointer = false;
   dialog.addEventListener("close", () => {
-    people = [];
+    proxies = [];
     current = -1;
     if (openedWithPointer && document.activeElement && document.activeElement.closest(".ref")) document.activeElement.blur();
   });
@@ -513,13 +513,13 @@ export const PERSON_SCRIPT = `<script>
       caption.textContent = shot.dataset.caption || "";
       view.append(img, caption);
       body.replaceChildren(view);
-      people = [];
+      proxies = [];
       current = -1;
       dialog.showModal();
       return;
     }
-    const trigger = event.target.closest("[data-person]");
-    if (trigger) { event.preventDefault(); openedWithPointer = event.detail > 0; open(trigger.dataset.person, trigger); return; }
+    const trigger = event.target.closest("[data-proxy]");
+    if (trigger) { event.preventDefault(); openedWithPointer = event.detail > 0; open(trigger.dataset.proxy, trigger); return; }
     if (event.target === dialog || event.target.closest(".dialog-close")) dialog.close();
   });
   document.querySelectorAll(".tabs [data-panel]").forEach((tab) => {

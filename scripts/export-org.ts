@@ -1,4 +1,4 @@
-// Write one org, its people, its calibration logs, and the seats they use to a single JSON file.
+// Write one org, its proxies, its calibration logs, and the seats they use to a single JSON file.
 // Usage: node scripts/export-org.ts <org> [out.json]
 import { writeFileSync } from "node:fs";
 import { orgBundle } from "./bundle.ts";
@@ -11,7 +11,7 @@ function main(): void {
   const target = out ?? `${org}.proxies.json`;
   const data = orgBundle(ROOT, org);
   writeFileSync(target, JSON.stringify(data, null, 2) + "\n");
-  console.log(`Wrote ${target}: ${data.people.length} people, ${data.seats.length} seats, ${data.calibration.length} calibration logs`);
+  console.log(`Wrote ${target}: ${data.proxies.length} proxies, ${data.seats.length} seats, ${data.calibration.length} calibration logs`);
 }
 
 main();

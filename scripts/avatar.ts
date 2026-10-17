@@ -1,5 +1,5 @@
-// Draw one avatar per person in the flat cut-paper style of the Proxies illustration.
-// The same org and handle always give the same avatar. An "avatar_seed" field in the person file changes it.
+// Draw one avatar per proxy in the flat cut-paper style of the Proxies illustration.
+// The same org and handle always give the same avatar. An "avatar_seed" field in the proxy file changes it.
 
 type Rng = () => number;
 
@@ -22,7 +22,7 @@ export type AvatarParts = {
   accent: string;
 };
 
-// A person file can set the style exactly with "avatar_hair", "avatar_top", "avatar_facial_hair", and "avatar_glasses".
+// A proxy file can set the style exactly with "avatar_hair", "avatar_top", "avatar_facial_hair", and "avatar_glasses".
 export type AvatarInput = { seed: string; pronouns: string; hair: string | null; top: string | null; facialHair: string | null; glasses: string | null };
 
 type Pool = { hair: readonly Hair[]; top: readonly Top[]; facialHair: number; broad: boolean };
@@ -245,7 +245,7 @@ export function avatarSvg(input: AvatarInput, size: number, instance: string): s
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" style="border-radius:50%;overflow:hidden" role="img" aria-hidden="true">${drawing(input, id)}</svg>`;
 }
 
-// One reusable avatar for a page. Every place that shows the person points at this symbol with <use>.
+// One reusable avatar for a page. Every place that shows the proxy points at this symbol with <use>.
 export function avatarSymbol(input: AvatarInput, id: string): string {
   return `<symbol id="${id}" viewBox="0 0 100 100">${drawing(input, `${id}-grain`)}</symbol>`;
 }

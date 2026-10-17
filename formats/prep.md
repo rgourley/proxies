@@ -2,9 +2,9 @@
 
 A pre-read for the real meeting. One blind round, in parallel. No rebuttal, no decision.
 
-Each person writes:
+Each proxy writes:
 - **First reaction**: one sentence, in voice.
-- **Top three questions** they will ask in the real meeting, in the order they will ask them. Each question is in the person's voice and names the step, node, or screen it is about.
+- **Top three questions** they will ask in the real meeting, in the order they will ask them. Each question is in the proxy's voice and names the step, node, or screen it is about.
 - **The answer that satisfies it**: for each question, what a presenter must say or show.
 
 Aim for about 300 words.

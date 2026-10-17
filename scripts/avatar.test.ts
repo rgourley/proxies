@@ -1,21 +1,21 @@
-// Checks the avatar generator against every person in the repo, plus the rules for pronouns and overrides.
+// Checks the avatar generator against every proxy in the repo, plus the rules for pronouns and overrides.
 // Run with: npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { avatarParts, avatarSvg } from "./avatar.ts";
 import { readOrgs } from "./lib.ts";
 
-const people = readOrgs().flatMap((org) => org.people);
+const proxies = readOrgs().flatMap((org) => org.proxies);
 
-test("the same person always gets the same avatar", () => {
-  for (const p of people) {
+test("the same proxy always gets the same avatar", () => {
+  for (const p of proxies) {
     assert.equal(avatarSvg(p.avatar, 100, "a"), avatarSvg(p.avatar, 100, "a"), p.avatar.seed);
   }
 });
 
-test("every person in every org draws an avatar", () => {
-  assert.ok(people.length > 0);
-  for (const p of people) {
+test("every proxy in every org draws an avatar", () => {
+  assert.ok(proxies.length > 0);
+  for (const p of proxies) {
     const svg = avatarSvg(p.avatar, 100, "x");
     assert.match(svg, /^<svg[\s\S]*<\/svg>$/, p.avatar.seed);
   }
@@ -49,7 +49,7 @@ test("a new seed gives a different avatar", () => {
 });
 
 test("each copy on a page has its own filter id and no clip reference", () => {
-  const input = people[0].avatar;
+  const input = proxies[0].avatar;
   const first = avatarSvg(input, 100, "i1");
   const second = avatarSvg(input, 100, "i2");
   const id = (svg: string): string => svg.match(/filter id="([^"]+)"/)?.[1] ?? "";

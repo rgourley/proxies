@@ -1,6 +1,6 @@
-// One persona card. The runs page shows a card in a modal when a viewer clicks a person.
+// One proxy card. The runs page shows a card in a modal when a viewer clicks a proxy.
 import { cardId, copyButton, decisionPill, esc, face, seatColor } from "./lib.ts";
-import type { Person, Section, UseCase } from "./lib.ts";
+import type { Proxy, Section, UseCase } from "./lib.ts";
 
 function listBlock(label: string, kind: string, items: string[]): string {
   return `<section class="block ${kind}"><h4>${label}</h4><ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></section>`;
@@ -10,44 +10,44 @@ function proseBlock(section: Section): string {
   return `<section class="prose"><h4>${esc(section.heading)}</h4>${section.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section>`;
 }
 
-function useTags(person: Person, useCases: UseCase[]): string {
-  if (person.uses.length === 0) return "";
-  const all = person.uses.length === useCases.length && useCases.length > 1;
-  const tags = all ? ["all use cases"] : person.uses;
+function useTags(proxy: Proxy, useCases: UseCase[]): string {
+  if (proxy.uses.length === 0) return "";
+  const all = proxy.uses.length === useCases.length && useCases.length > 1;
+  const tags = all ? ["all use cases"] : proxy.uses;
   return `<ul class="uses" aria-label="Use cases">${tags.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
 }
 
-export function card(person: Person, useCases: UseCase[]): string {
-  return `<article class="card" id="${esc(cardId(person))}" data-uses="${esc(person.uses.join(" "))}" style="--seat:${seatColor(person.seat)}">
-  <div class="band"><span class="band-seat">${esc(person.seat.replace(/-/g, " "))}</span>${decisionPill(person.decision)}</div>
+export function card(proxy: Proxy, useCases: UseCase[]): string {
+  return `<article class="card" id="${esc(cardId(proxy))}" data-uses="${esc(proxy.uses.join(" "))}" style="--seat:${seatColor(proxy.seat)}">
+  <div class="band"><span class="band-seat">${esc(proxy.seat.replace(/-/g, " "))}</span>${decisionPill(proxy.decision)}</div>
   <div class="card-cols">
   <div class="card-id">
   <header class="card-head">
-    <div class="card-avatar" aria-hidden="true">${face(person)}</div>
+    <div class="card-avatar" aria-hidden="true">${face(proxy)}</div>
     <div class="who">
-      <h3>${esc(person.name)} <span class="pronouns">${esc(person.pronouns)}</span></h3>
-      <p class="title">${esc(person.title)}</p>
+      <h3>${esc(proxy.name)} <span class="pronouns">${esc(proxy.pronouns)}</span></h3>
+      <p class="title">${esc(proxy.title)}</p>
     </div>
   </header>
   <div class="meta-row">
-    <span>Reports to ${esc(person.reports_to)}</span>
+    <span>Reports to ${esc(proxy.reports_to)}</span>
     <span class="sep" aria-hidden="true"></span>
-    <span>${esc(person.tenure)}</span>
+    <span>${esc(proxy.tenure)}</span>
   </div>
-  ${useTags(person, useCases)}
-  <blockquote>${esc(person.quote)}</blockquote>
+  ${useTags(proxy, useCases)}
+  <blockquote>${esc(proxy.quote)}</blockquote>
   <footer class="card-foot">
-    <p class="voice"><span class="section-label">Voice</span> ${esc(person.voice)}</p>
-    ${copyButton(`/proxies ask ${person.handle}`)}
+    <p class="voice"><span class="section-label">Voice</span> ${esc(proxy.voice)}</p>
+    ${copyButton(`/proxies ask ${proxy.handle}`)}
   </footer>
   </div>
   <div class="card-detail">
   <div class="blocks">
-    ${listBlock("Measured on", "measured", person.measured_on)}
-    ${listBlock("Hard lines", "hard", person.hard_lines)}
-    ${listBlock("Blind spots", "blind", person.blind_spots)}
+    ${listBlock("Measured on", "measured", proxy.measured_on)}
+    ${listBlock("Hard lines", "hard", proxy.hard_lines)}
+    ${listBlock("Blind spots", "blind", proxy.blind_spots)}
   </div>
-  ${person.sections.map(proseBlock).join("\n  ")}
+  ${proxy.sections.map(proseBlock).join("\n  ")}
   </div>
   </div>
 </article>`;

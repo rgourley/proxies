@@ -18,8 +18,14 @@ function isFile(value: Json): boolean {
 
 function parse(path: string): OrgBundle {
   const raw: { [key: string]: Json } = JSON.parse(readFileSync(path === "-" ? 0 : path, "utf8"));
-  const lists = ["people", "calibration", "seats"] as const;
-  if (raw.format !== "proxies-org" || raw.version !== 1) throw new Error(`${path} is not a proxies-org v1 file (format=${String(raw.format)}, version=${String(raw.version)})`);
+  // Version 1 files name the proxies list "people". Version 2 files name it "proxies".
+  if (raw.format !== "proxies-org" || (raw.version !== 1 && raw.version !== 2)) throw new Error(`${path} is not a proxies-org v1 or v2 file (format=${String(raw.format)}, version=${String(raw.version)})`);
+  if (raw.version === 1) {
+    raw.proxies = raw.people;
+    delete raw.people;
+    raw.version = 2;
+  }
+  const lists = ["proxies", "calibration", "seats"] as const;
   if (typeof raw.org !== "string" || !SAFE_ID.test(raw.org)) throw new Error(`${path} has an invalid org id: ${String(raw.org)}`);
   if (typeof raw.orgFile !== "string") throw new Error(`${path} has no org.md text`);
   for (const key of lists) {
@@ -29,7 +35,7 @@ function parse(path: string): OrgBundle {
   return raw as OrgBundle;
 }
 
-// The org id appears in org.md and in every person file as "org: <id>".
+// The org id appears in org.md and in every proxy file as "org: <id>".
 function renameOrg(text: string, from: string, to: string): string {
   return text.replace(new RegExp(`^org:\\s*${from}\\s*$`, "m"), `org: ${to}`);
 }
@@ -54,9 +60,9 @@ function main(): void {
     throw new Error(`These seats differ from this repo's copies: ${conflicts.map((s) => s.name).join(", ")}. Reconcile seats/ before importing ${file === "-" ? "this org" : basename(file)}`);
   }
 
-  mkdirSync(join(dir, "people"), { recursive: true });
+  mkdirSync(join(dir, "proxies"), { recursive: true });
   writeFileSync(join(dir, "org.md"), renameOrg(data.orgFile, data.org, id));
-  for (const p of data.people) writeFileSync(join(dir, "people", p.name), renameOrg(p.text, data.org, id));
+  for (const p of data.proxies) writeFileSync(join(dir, "proxies", p.name), renameOrg(p.text, data.org, id));
   if (data.calibration.length > 0) {
     mkdirSync(join(dir, "calibration"), { recursive: true });
     for (const c of data.calibration) writeFileSync(join(dir, "calibration", c.name), c.text);
@@ -64,7 +70,7 @@ function main(): void {
   const added = data.seats.filter((s) => !existsSync(join(ROOT, "seats", s.name)));
   for (const s of added) writeFileSync(join(ROOT, "seats", s.name), s.text);
 
-  console.log(`Imported orgs/${id}: ${data.people.length} people, ${added.length} new seats`);
+  console.log(`Imported orgs/${id}: ${data.proxies.length} proxies, ${added.length} new seats`);
 }
 
 main();

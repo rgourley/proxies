@@ -1,4 +1,4 @@
-// Print the SEAT, ORG, PERSON, and EXPERTISE blocks for one person, verbatim from the files.
+// Print the SEAT, ORG, PROXY, and EXPERTISE blocks for one proxy, verbatim from the files.
 // Usage: node scripts/identity.ts <org> <handle>
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -10,8 +10,8 @@ function read(path: string): string {
   return readFileSync(path, "utf8").trim();
 }
 
-function seatOf(person: string, file: string): string {
-  const match = person.match(/^seat:\s*(\S+)/m);
+function seatOf(proxy: string, file: string): string {
+  const match = proxy.match(/^seat:\s*(\S+)/m);
   if (!match) throw new Error(`No seat in ${file}`);
   return match[1];
 }
@@ -23,7 +23,7 @@ function knowsOf(text: string): string[] {
   return block[1].split("\n").map((l) => l.replace(/^\s*-\s*/, "").trim()).filter(Boolean);
 }
 
-// Expertise is what the person knows. The person applies it and does not review it.
+// Expertise is what the proxy knows. The proxy applies it and does not review it.
 function expertise(ids: string[]): string {
   if (ids.length === 0) return "";
   const parts = ids.map((id) => {
@@ -36,12 +36,12 @@ function expertise(ids: string[]): string {
 function main(): void {
   const [org, handle] = process.argv.slice(2);
   if (!org || !handle) throw new Error("Usage: node scripts/identity.ts <org> <handle>");
-  const personFile = join(ROOT, "orgs", org, "people", `${handle}.md`);
-  const person = read(personFile);
-  const seat = read(join(ROOT, "seats", `${seatOf(person, personFile)}.md`));
+  const proxyFile = join(ROOT, "orgs", org, "proxies", `${handle}.md`);
+  const proxy = read(proxyFile);
+  const seat = read(join(ROOT, "seats", `${seatOf(proxy, proxyFile)}.md`));
   const orgText = read(join(ROOT, "orgs", org, "org.md"));
-  const knows = [...new Set([...knowsOf(orgText), ...knowsOf(person)])];
-  console.log(`SEAT\n${seat}\n\nORG\n${orgText}\n\nPERSON\n${person}${expertise(knows)}`);
+  const knows = [...new Set([...knowsOf(orgText), ...knowsOf(proxy)])];
+  console.log(`SEAT\n${seat}\n\nORG\n${orgText}\n\nPROXY\n${proxy}${expertise(knows)}`);
 }
 
 main();

@@ -1,16 +1,16 @@
 // Build the runs page from every runs/<run>/meta.md and the proxy output files in that run.
-// Each person name links to that person's card on the cards page and shows a short preview on hover.
+// Each proxy name links to that proxy's card on the cards page and shows a short preview on hover.
 // The script writes runs.html for local use and runs.artifact.html for the Artifact publisher.
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PERSON_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
-import type { Frontmatter, Org, Person } from "./lib.ts";
+import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PROXY_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
+import type { Frontmatter, Org, Proxy } from "./lib.ts";
 import { orgBundle } from "./bundle.ts";
 import { card, CARD_CSS } from "./card.ts";
 
 type Verdict = "block" | "rework" | "ship-with-changes" | "ship";
 
-type Output = { person: Person; markdown: string; verdict: Verdict | null; critical: number; high: number };
+type Output = { proxy: Proxy; markdown: string; verdict: Verdict | null; critical: number; high: number };
 
 const VERDICT_ORDER: readonly Verdict[] = ["block", "rework", "ship-with-changes", "ship"];
 const VERDICT_LABEL: ReadonlyMap<Verdict, string> = new Map([
@@ -32,8 +32,8 @@ function severityCount(markdown: string, level: string): number {
   return (markdown.match(new RegExp(`\\*\\*Severity:?\\*\\*:?\\s*${level}`, "gi")) ?? []).length;
 }
 
-function readOutput(person: Person, markdown: string): Output {
-  return { person, markdown, verdict: verdictOf(markdown), critical: severityCount(markdown, "critical"), high: severityCount(markdown, "high") };
+function readOutput(proxy: Proxy, markdown: string): Output {
+  return { proxy, markdown, verdict: verdictOf(markdown), critical: severityCount(markdown, "critical"), high: severityCount(markdown, "high") };
 }
 
 function verdictRank(o: Output): number {
@@ -42,7 +42,7 @@ function verdictRank(o: Output): number {
 
 type Source = { title: string; url: string };
 
-// Context is one knowledge collection that every person in the run reads before the review.
+// Context is one knowledge collection that every proxy in the run reads before the review.
 type Context = { id: string; name: string; sources: Source[] };
 
 type Round = { id: string; label: string; note: string; outputs: Output[] };
@@ -59,9 +59,9 @@ type Run = {
   artifactSource: string;
   source: { url: string; label: string } | null;
   context: Context | null;
-  attendees: Person[];
+  attendees: Proxy[];
   summaries: { label: string; markdown: string }[];
-  ownerDecision: { person: Person; markdown: string } | null;
+  ownerDecision: { proxy: Proxy; markdown: string } | null;
   rounds: Round[];
 };
 
@@ -71,31 +71,31 @@ const OUT_ARTIFACT = join(ROOT, "runs.artifact.html");
 // The facilitator writes the summary of every run. It shows first.
 const SUMMARY_FILE = "summary.md";
 
-// The decision owner writes the decision at the end of a meeting, in the first person. The page names the owner above it.
+// The decision owner writes the decision at the end of a meeting, in the first proxy. The page names the owner above it.
 const OWNER_DECISION_FILE = "decision.md";
 
 // The owner is the "owner" handle in meta.md. A run without that field uses the attendee whose decision level is owner.
-function ownerOf(fields: Frontmatter, attendees: Person[], org: Org, metaFile: string): Person | null {
+function ownerOf(fields: Frontmatter, attendees: Proxy[], org: Org, metaFile: string): Proxy | null {
   const handle = fields.get("owner");
-  if (typeof handle === "string") return findPerson(org, handle, metaFile);
+  if (typeof handle === "string") return findProxy(org, handle, metaFile);
   return attendees.find((p) => p.decision === "owner") ?? null;
 }
 
-function readOwnerDecision(dir: string, owner: Person | null, metaFile: string): { person: Person; markdown: string } | null {
+function readOwnerDecision(dir: string, owner: Proxy | null, metaFile: string): { proxy: Proxy; markdown: string } | null {
   const file = join(dir, OWNER_DECISION_FILE);
   if (!existsSync(file)) return null;
   if (!owner) throw new Error(`${OWNER_DECISION_FILE} exists but no decision owner is set. Add "owner" to ${metaFile}`);
-  return { person: owner, markdown: readFileSync(file, "utf8") };
+  return { proxy: owner, markdown: readFileSync(file, "utf8") };
 }
 
-// Each round folder gets a plain name and one line that explains what the people did in that round.
+// Each round folder gets a plain name and one line that explains what the proxies did in that round.
 const ROUND_NAMES: ReadonlyMap<string, { label: string; note: string }> = new Map([
-  ["blind", { label: "First take", note: "Each person reviewed it alone, before they read anyone else." }],
-  ["rebuttal", { label: "Response to the room", note: "Each person read every first take, then said who they agree with, who they push back on, and whether they changed their mind." }],
-  ["attacks", { label: "Ways it breaks", note: "Each person tried to break it from their own seat." }],
-  ["prep", { label: "Questions to expect", note: "Each person's top questions for the real meeting, and the answers that satisfy them." }],
-  ["followup", { label: "Did the revision answer them", note: "Each person checked their earlier objections against the new version." }],
-  ["compare", { label: "Which version they pick", note: "Each person saw both versions in a random order and picked one." }],
+  ["blind", { label: "First take", note: "Each proxy reviewed it alone, before they read anyone else." }],
+  ["rebuttal", { label: "Response to the room", note: "Each proxy read every first take, then said who they agree with, who they push back on, and whether they changed their mind." }],
+  ["attacks", { label: "Ways it breaks", note: "Each proxy tried to break it from their own seat." }],
+  ["prep", { label: "Questions to expect", note: "Each proxy's top questions for the real meeting, and the answers that satisfy them." }],
+  ["followup", { label: "Did the revision answer them", note: "Each proxy checked their earlier objections against the new version." }],
+  ["compare", { label: "Which version they pick", note: "Each proxy saw both versions in a random order and picked one." }],
 ]);
 
 function roundName(folder: string): { label: string; note: string } {
@@ -103,10 +103,10 @@ function roundName(folder: string): { label: string; note: string } {
   return ROUND_NAMES.get(key) ?? { label: key.replace(/-/g, " "), note: "" };
 }
 
-function findPerson(org: Org, handle: string, where: string): Person {
-  const person = org.people.find((p) => p.handle === handle);
-  if (!person) throw new Error(`Unknown handle "${handle}" for org ${org.id} in ${where}`);
-  return person;
+function findProxy(org: Org, handle: string, where: string): Proxy {
+  const proxy = org.proxies.find((p) => p.handle === handle);
+  if (!proxy) throw new Error(`Unknown handle "${handle}" for org ${org.id} in ${where}`);
+  return proxy;
 }
 
 // The run shows the file it reviewed. A missing file is an error, so a run never shows without its input.
@@ -154,7 +154,7 @@ function readRun(id: string, orgs: Org[]): Run {
   const org = orgs.find((o) => o.id === orgId);
   if (!org) throw new Error(`Run ${id} names unknown org "${orgId}"`);
   const summaries = existsSync(join(dir, SUMMARY_FILE)) ? [{ label: "Summary", markdown: readFileSync(join(dir, SUMMARY_FILE), "utf8") }] : [];
-  const attendees = list(fields, "attendees", metaFile).map((h) => findPerson(org, h, metaFile));
+  const attendees = list(fields, "attendees", metaFile).map((h) => findProxy(org, h, metaFile));
   const rounds = readdirSync(dir)
     .filter((f) => /^\d+-/.test(f) && statSync(join(dir, f)).isDirectory())
     .sort()
@@ -163,8 +163,8 @@ function readRun(id: string, orgs: Org[]): Run {
       ...roundName(folder),
       outputs: readdirSync(join(dir, folder))
         .filter((f) => f.endsWith(".md"))
-        .map((f) => readOutput(findPerson(org, f.replace(/\.md$/, ""), `${id}/${folder}`), readFileSync(join(dir, folder, f), "utf8")))
-        .sort((a, b) => verdictRank(a) - verdictRank(b) || b.critical - a.critical || b.high - a.high || a.person.name.localeCompare(b.person.name)),
+        .map((f) => readOutput(findProxy(org, f.replace(/\.md$/, ""), `${id}/${folder}`), readFileSync(join(dir, folder, f), "utf8")))
+        .sort((a, b) => verdictRank(a) - verdictRank(b) || b.critical - a.critical || b.high - a.high || a.proxy.name.localeCompare(b.proxy.name)),
     }));
   return {
     id,
@@ -185,21 +185,21 @@ function readRun(id: string, orgs: Org[]): Run {
   };
 }
 
-function preview(person: Person): string {
+function preview(proxy: Proxy): string {
   return `<span class="pop" role="tooltip">
     <span class="pop-body">
-      <span class="pop-row">${seatPill(person.seat)}${decisionPill(person.decision)}</span>
-      <span class="pop-head"><span class="pop-avatar" aria-hidden="true">${face(person)}</span><span class="pop-who"><span class="pop-name">${esc(person.name)}</span><span class="pop-title">${esc(person.title)}</span></span></span>
-      <span class="pop-quote">${esc(person.quote)}</span>
+      <span class="pop-row">${seatPill(proxy.seat)}${decisionPill(proxy.decision)}</span>
+      <span class="pop-head"><span class="pop-avatar" aria-hidden="true">${face(proxy)}</span><span class="pop-who"><span class="pop-name">${esc(proxy.name)}</span><span class="pop-title">${esc(proxy.title)}</span></span></span>
+      <span class="pop-quote">${esc(proxy.quote)}</span>
       <span class="pop-label">Hard lines</span>
-      ${person.hard_lines.map((h) => `<span class="pop-line">${esc(h)}</span>`).join("")}
+      ${proxy.hard_lines.map((h) => `<span class="pop-line">${esc(h)}</span>`).join("")}
       <span class="pop-open">Click to open the card</span>
     </span>
   </span>`;
 }
 
-function mention(person: Person, label: string): string {
-  return `<span class="ref" style="--seat:${seatColor(person.seat)}"><a href="#${esc(cardId(person))}" data-person="${esc(cardId(person))}">${label}</a>${preview(person)}</span>`;
+function mention(proxy: Proxy, label: string): string {
+  return `<span class="ref" style="--seat:${seatColor(proxy.seat)}"><a href="#${esc(cardId(proxy))}" data-proxy="${esc(cardId(proxy))}">${label}</a>${preview(proxy)}</span>`;
 }
 
 // The renderer handles the markdown that proxies and the facilitator write:
@@ -225,12 +225,12 @@ function tagSeverity(html: string): string {
 }
 
 function linkNames(html: string, org: Org): string {
-  if (org.people.length === 0) return html;
-  const byName = new Map(org.people.map((p) => [p.name, p]));
-  const pattern = new RegExp(`\\b(${org.people.map((p) => p.name).join("|")})\\b`, "g");
+  if (org.proxies.length === 0) return html;
+  const byName = new Map(org.proxies.map((p) => [p.name, p]));
+  const pattern = new RegExp(`\\b(${org.proxies.map((p) => p.name).join("|")})\\b`, "g");
   return html.replace(pattern, (name: string) => {
-    const person = byName.get(name);
-    return person ? mention(person, name) : name;
+    const proxy = byName.get(name);
+    return proxy ? mention(proxy, name) : name;
   });
 }
 
@@ -267,26 +267,26 @@ function markdown(source: string, org: Org): string {
     .join("\n");
 }
 
-// Proxy output starts with "# Name, Title". The person header replaces that line.
+// Proxy output starts with "# Name, Title". The proxy header replaces that line.
 function stripTitleLine(source: string): string {
   return source.replace(/^# .*\n+/, "");
 }
 
-// The avatar dot shows the person's verdict from the last round they answered: red for Block, amber for Rework, blue for Ship with changes, green for Ship.
-function avatar(person: Person, verdict: Verdict | null): string {
-  const label = verdict ? `${person.name}: ${VERDICT_LABEL.get(verdict)}` : person.name;
+// The avatar dot shows the proxy's verdict from the last round they answered: red for Block, amber for Rework, blue for Ship with changes, green for Ship.
+function avatar(proxy: Proxy, verdict: Verdict | null): string {
+  const label = verdict ? `${proxy.name}: ${VERDICT_LABEL.get(verdict)}` : proxy.name;
   const dot = verdict ? `<span class="status-dot v-${verdict}" aria-hidden="true"></span>` : "";
-  return `<span class="ref avatar-ref" style="--seat:${seatColor(person.seat)}"><a class="avatar" href="#${esc(cardId(person))}" data-person="${esc(cardId(person))}" aria-label="${esc(label)}">${face(person)}${dot}</a>${preview(person)}</span>`;
+  return `<span class="ref avatar-ref" style="--seat:${seatColor(proxy.seat)}"><a class="avatar" href="#${esc(cardId(proxy))}" data-proxy="${esc(cardId(proxy))}" aria-label="${esc(label)}">${face(proxy)}${dot}</a>${preview(proxy)}</span>`;
 }
 
 function latestVerdicts(run: Run): Map<string, Verdict | null> {
   const verdicts = new Map<string, Verdict | null>();
-  for (const round of run.rounds) for (const o of round.outputs) verdicts.set(o.person.handle, o.verdict);
+  for (const round of run.rounds) for (const o of round.outputs) verdicts.set(o.proxy.handle, o.verdict);
   return verdicts;
 }
 
 function output(item: Output, org: Org): string {
-  const p = item.person;
+  const p = item.proxy;
   const verdict = item.verdict ? VERDICT_LABEL.get(item.verdict) ?? "" : "No verdict";
   return `<details class="output" style="--seat:${seatColor(p.seat)}">
     <summary>
@@ -310,19 +310,19 @@ function tally(round: Round): string {
   return pills ? `<p class="verdict-tally">${pills}</p>` : "";
 }
 
-// A thread is one person's responses across every round of a run, in round order.
-type Thread = { person: Person; steps: { round: Round; output: Output }[] };
+// A thread is one proxy's responses across every round of a run, in round order.
+type Thread = { proxy: Proxy; steps: { round: Round; output: Output }[] };
 
 function threads(run: Run): Thread[] {
   const byHandle = new Map<string, Thread>();
   for (const round of run.rounds) {
     for (const o of round.outputs) {
-      const prior = byHandle.get(o.person.handle);
-      byHandle.set(o.person.handle, { person: o.person, steps: [...(prior?.steps ?? []), { round, output: o }] });
+      const prior = byHandle.get(o.proxy.handle);
+      byHandle.set(o.proxy.handle, { proxy: o.proxy, steps: [...(prior?.steps ?? []), { round, output: o }] });
     }
   }
   const latest = (t: Thread): Output => t.steps[t.steps.length - 1].output;
-  return [...byHandle.values()].sort((a, b) => verdictRank(latest(a)) - verdictRank(latest(b)) || a.person.name.localeCompare(b.person.name));
+  return [...byHandle.values()].sort((a, b) => verdictRank(latest(a)) - verdictRank(latest(b)) || a.proxy.name.localeCompare(b.proxy.name));
 }
 
 function verdictWord(verdict: Verdict | null): string {
@@ -331,7 +331,7 @@ function verdictWord(verdict: Verdict | null): string {
 
 // The row shows the verdict in each round, so a reader sees who changed position without opening it.
 function thread(t: Thread, org: Org): string {
-  const p = t.person;
+  const p = t.proxy;
   const latest = t.steps[t.steps.length - 1].output.verdict;
   const changed = new Set(t.steps.map((s) => s.output.verdict)).size > 1;
   const path = t.steps
@@ -349,8 +349,8 @@ function thread(t: Thread, org: Org): string {
   </details>`;
 }
 
-function ownerDecisionBlock(d: { person: Person; markdown: string }, org: Org): string {
-  const p = d.person;
+function ownerDecisionBlock(d: { proxy: Proxy; markdown: string }, org: Org): string {
+  const p = d.proxy;
   return `<article class="summary owner-decision" style="--seat:${seatColor(p.seat)}">
     <p class="owner-by"><span class="mono" aria-hidden="true">${face(p)}</span><span>Decision, written by ${mention(p, esc(p.name))}, ${esc(p.title)}</span></p>
     <div class="md">${markdown(stripTitleLine(d.markdown), org)}</div>
@@ -358,12 +358,12 @@ function ownerDecisionBlock(d: { person: Person; markdown: string }, org: Org): 
 }
 
 function threadSection(run: Run): string {
-  const people = threads(run);
+  const proxies = threads(run);
   const order = run.rounds.map((r) => r.label).join(", then ");
-  return `<section class="round"><h3 class="round-label">Each person's view<span>${people.length} people</span></h3>
-  <p class="round-note">${esc(order)}. Open a person to read their rounds in order.</p>
+  return `<section class="round"><h3 class="round-label">Each proxy's view<span>${proxies.length} proxies</span></h3>
+  <p class="round-note">${esc(order)}. Open a proxy to read their rounds in order.</p>
   ${run.rounds.map((r) => `<p class="verdict-tally"><span class="tally-label">${esc(r.label)}</span>${tallyPills(r)}</p>`).join("\n")}
-  <div class="list">${people.map((t) => thread(t, run.org)).join("\n")}</div></section>`;
+  <div class="list">${proxies.map((t) => thread(t, run.org)).join("\n")}</div></section>`;
 }
 
 // The overview chip names the reviewed doc and its source. Hover or focus shows the doc's first note and its diagram.
@@ -394,7 +394,7 @@ function contextChip(run: Run): string {
 
 function attendeeRow(run: Run): string {
   const verdicts = latestVerdicts(run);
-  const rank = (p: Person): number => {
+  const rank = (p: Proxy): number => {
     const v = verdicts.get(p.handle);
     return v ? VERDICT_ORDER.indexOf(v) : VERDICT_ORDER.length;
   };
@@ -448,13 +448,13 @@ function progressBanner(run: Run): string {
   const round = run.rounds[run.rounds.length - 1];
   const answered = round ? round.outputs.length : 0;
   const stage = round ? ` in ${round.label.toLowerCase()}` : "";
-  return `<p class="in-progress" role="status"><span class="spinner" aria-hidden="true"></span>In progress. ${answered} of ${run.attendees.length} people have answered${esc(stage)}. The summary appears here when the run finishes.</p>`;
+  return `<p class="in-progress" role="status"><span class="spinner" aria-hidden="true"></span>In progress. ${answered} of ${run.attendees.length} proxies have answered${esc(stage)}. The summary appears here when the run finishes.</p>`;
 }
 
 function runSection(run: Run): string {
   return `<section class="run" id="${esc(run.id)}">
   <header class="run-head">
-    <p class="eyebrow"><span class="format">${esc(run.format)}</span><span>${esc(run.date)}</span><span class="sep" aria-hidden="true"></span><a href="#" class="org-link" data-person="org-${esc(run.org.id)}">${esc(run.org.name)}</a></p>
+    <p class="eyebrow"><span class="format">${esc(run.format)}</span><span>${esc(run.date)}</span><span class="sep" aria-hidden="true"></span><a href="#" class="org-link" data-proxy="org-${esc(run.org.id)}">${esc(run.org.name)}</a></p>
     <h1 class="page-title">${esc(run.title)}</h1>
     <div class="run-meta">
       ${overview(run)}
@@ -623,15 +623,15 @@ th { font: 500 11px var(--font-body); letter-spacing: .06em; text-transform: upp
 .org-note { margin: 0; font-size: 13.5px; color: var(--ink-2); background: var(--panel); border-radius: 8px; padding: 10px 12px; }
 .org-card h4 { margin: 10px 0 0; }
 .org-uses { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
-.org-people { list-style: none; margin: 0; padding: 0; display: grid; }
-.org-people button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 7px 6px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; font: inherit; font-size: 14px; color: var(--ink); text-align: left; cursor: pointer; }
-.org-people button:hover { background: var(--hover); }
+.org-proxies { list-style: none; margin: 0; padding: 0; display: grid; }
+.org-proxies button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 7px 6px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; font: inherit; font-size: 14px; color: var(--ink); text-align: left; cursor: pointer; }
+.org-proxies button:hover { background: var(--hover); }
 .op-name { font-weight: 500; flex: none; }
 .op-title { color: var(--muted); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-avatar { flex: none; display: block; width: 22px; height: 22px; border-radius: 50%; }
-.nav-group button.nav-person { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; background: transparent; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
-dialog#person-dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100vh - 88px); margin: 64px auto 24px; padding: 0; border: 0; border-radius: 14px; background: transparent; overflow: visible; }
-dialog#person-dialog::backdrop { background: rgba(10, 10, 12, .55); backdrop-filter: blur(2px); }
+.nav-group button.nav-proxy { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; background: transparent; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+dialog#proxy-dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100vh - 88px); margin: 64px auto 24px; padding: 0; border: 0; border-radius: 14px; background: transparent; overflow: visible; }
+dialog#proxy-dialog::backdrop { background: rgba(10, 10, 12, .55); backdrop-filter: blur(2px); }
 .dialog-body { max-height: calc(100vh - 88px); overflow-y: auto; border-radius: 12px; }
 .dialog-body .card { box-shadow: 0 24px 60px rgba(0,0,0,.3); padding-bottom: 24px; }
 .dialog-body .card-cols { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px; }
@@ -646,12 +646,12 @@ function navGroup(runs: Run[]): string {
     .join("")}</div>`;
 }
 
-// The People panel shows one org at a time. The picker switches the org, and "About" opens the org overview.
-function peopleNav(orgs: Org[]): string {
-  const picker = `<div class="org-pick-row"><select id="org-pick" aria-label="Org">${orgs.map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("")}</select><button type="button" class="org-about" data-person="org-${esc(orgs[0]?.id ?? "")}">About</button><button type="button" class="org-about org-export" title="Copy this org as JSON. Paste it into Claude Code with /proxies import">Export</button></div>`;
+// The Proxies panel shows one org at a time. The picker switches the org, and "About" opens the org overview.
+function proxiesNav(orgs: Org[]): string {
+  const picker = `<div class="org-pick-row"><select id="org-pick" aria-label="Org">${orgs.map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("")}</select><button type="button" class="org-about" data-proxy="org-${esc(orgs[0]?.id ?? "")}">About</button><button type="button" class="org-about org-export" title="Copy this org as JSON. Paste it into Claude Code with /proxies import">Export</button></div>`;
   return picker + orgs
-    .map((org, i) => `<div class="nav-group org-group" data-org="${esc(org.id)}"${i === 0 ? "" : " hidden"}><p class="nav-label">${org.people.length} people</p>${org.people
-      .map((p) => `<button type="button" class="nav-person" data-person="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${face(p)}</span>${esc(p.name)}<span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button>`)
+    .map((org, i) => `<div class="nav-group org-group" data-org="${esc(org.id)}"${i === 0 ? "" : " hidden"}><p class="nav-label">${org.proxies.length} proxies</p>${org.proxies
+      .map((p) => `<button type="button" class="nav-proxy" data-proxy="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${face(p)}</span>${esc(p.name)}<span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button>`)
       .join("")}</div>`)
     .join("");
 }
@@ -663,18 +663,18 @@ function orgCard(org: Org): string {
   <p class="org-tagline">${esc(org.tagline)}</p>
   ${org.note ? `<p class="org-note">${esc(org.note)}</p>` : ""}
   ${org.useCases.length ? `<h4>Use cases</h4><ul class="org-uses">${org.useCases.map((u) => `<li><code>${esc(u.id)}</code> ${esc(u.label)}</li>`).join("")}</ul>` : ""}
-  <h4>People</h4>
-  <ul class="org-people">${org.people.map((p) => `<li><button type="button" data-person="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${face(p)}</span><span class="op-name">${esc(p.name)}</span><span class="op-title">${esc(p.title)}</span><span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button></li>`).join("")}</ul>
+  <h4>Proxies</h4>
+  <ul class="org-proxies">${org.proxies.map((p) => `<li><button type="button" data-proxy="${esc(cardId(p))}"><span class="nav-avatar" aria-hidden="true">${face(p)}</span><span class="op-name">${esc(p.name)}</span><span class="op-title">${esc(p.title)}</span><span class="nav-meta">${esc(DECISION_LABEL.get(p.decision) ?? p.decision)}</span></button></li>`).join("")}</ul>
 </article>`;
 }
 
 function templates(orgs: Org[]): string {
-  const people = orgs.flatMap((org) => org.people.map((p) => `<template id="tpl-${esc(cardId(p))}">${card(p, org.useCases)}</template>`));
+  const proxies = orgs.flatMap((org) => org.proxies.map((p) => `<template id="tpl-${esc(cardId(p))}">${card(p, org.useCases)}</template>`));
   const orgCards = orgs.map((org) => `<template id="tpl-org-${esc(org.id)}">${orgCard(org)}</template>`);
-  return [...people, ...orgCards].join("\n");
+  return [...proxies, ...orgCards].join("\n");
 }
 
-// The org picker shows one org's people in the sidebar and points the About button at that org.
+// The org picker shows one org's proxies in the sidebar and points the About button at that org.
 const ORG_SCRIPT = `<script>
 (() => {
   const pick = document.getElementById("org-pick");
@@ -682,7 +682,7 @@ const ORG_SCRIPT = `<script>
   if (!pick) return;
   pick.addEventListener("change", () => {
     document.querySelectorAll(".org-group").forEach((g) => { g.hidden = g.dataset.org !== pick.value; });
-    about.dataset.person = "org-" + pick.value;
+    about.dataset.proxy = "org-" + pick.value;
   });
   // Export copies the selected org's bundle. The clipboard can refuse, so the fallback selects the JSON for a manual copy.
   const exportBtn = document.querySelector(".org-export");
@@ -754,22 +754,22 @@ function fragment(runs: Run[], orgs: Org[]): string {
 ${FAVICON}
 ${FONTS}
 <style>${STYLE}${CARD_CSS}</style>
-${avatarSprite(orgs.flatMap((o) => o.people))}
+${avatarSprite(orgs.flatMap((o) => o.proxies))}
 <div class="shell" id="top">
-  ${sidebar(navGroup(runs), peopleNav(orgs))}
+  ${sidebar(navGroup(runs), proxiesNav(orgs))}
   <main class="content"><div class="content-inner">
     <header class="masthead">${LOGO}</header>
     ${runs.map((r) => runSection(r)).join("\n")}
   </div></main>
 </div>
-<dialog id="person-dialog" aria-label="Person card">
+<dialog id="proxy-dialog" aria-label="Proxy card">
   <button type="button" class="dialog-close" aria-label="Close">Close</button>
   <div class="dialog-body"></div>
 </dialog>
 ${templates(orgs)}
 ${orgs.map(bundleScript).join("\n")}
 ${COPY_SCRIPT}
-${PERSON_SCRIPT}
+${PROXY_SCRIPT}
 ${RUN_SCRIPT}
 ${POP_SCRIPT}
 ${ORG_SCRIPT}`;
@@ -779,22 +779,22 @@ const SHARE_DIR = join(ROOT, "share");
 
 // The share file holds one run and the cards of its attendees only. It has no sidebar and no org export.
 function shareFragment(run: Run): string {
-  const org: Org = { ...run.org, people: run.org.people.filter((p) => run.attendees.some((a) => a.handle === p.handle)) };
+  const org: Org = { ...run.org, proxies: run.org.proxies.filter((p) => run.attendees.some((a) => a.handle === p.handle)) };
   return `<title>${esc(run.title)}</title>
 ${FAVICON}
 ${FONTS}
 <style>${STYLE}${CARD_CSS}${SHARE_CSS}</style>
-${avatarSprite(org.people)}
+${avatarSprite(org.proxies)}
 <main class="content share"><div class="content-inner">
   <header class="masthead">${LOGO}</header>
   ${runSection(run)}
 </div></main>
-<dialog id="person-dialog" aria-label="Person card">
+<dialog id="proxy-dialog" aria-label="Proxy card">
   <button type="button" class="dialog-close" aria-label="Close">Close</button>
   <div class="dialog-body"></div>
 </dialog>
 ${templates([org])}
-${PERSON_SCRIPT}
+${PROXY_SCRIPT}
 ${RUN_SCRIPT}
 ${POP_SCRIPT}`;
 }
