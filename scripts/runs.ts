@@ -93,6 +93,7 @@ const ROUND_NAMES: ReadonlyMap<string, { label: string; note: string }> = new Ma
   ["blind", { label: "First take", note: "Each proxy reviewed it alone, before they read anyone else." }],
   ["rebuttal", { label: "Response to the room", note: "Each proxy read every first take, then said who they agree with, who they push back on, and whether they changed their mind." }],
   ["attacks", { label: "Ways it breaks", note: "Each proxy tried to break it from their own seat." }],
+  ["premortem", { label: "How it failed", note: "Each proxy imagined it had failed six months after launch, and told how from their own seat." }],
   ["prep", { label: "Questions to expect", note: "Each proxy's top questions for the real meeting, and the answers that satisfy them." }],
   ["followup", { label: "Did the revision answer them", note: "Each proxy checked their earlier objections against the new version." }],
   ["compare", { label: "Which version they pick", note: "Each proxy saw both versions in a random order and picked one." }],

@@ -28,6 +28,7 @@ If the arguments are empty, are `help`, or do not start with a command, help the
 | The user wants to | Command |
 |---|---|
 | Find where something breaks before showing it | `redteam` |
+| Imagine it already failed, and find out why | `redteam --premortem` |
 | Get a decision, with objections and dissent recorded | `meeting` |
 | Know what questions to expect in a real meeting | `prep` |
 | Check whether a revision answered earlier objections | `followup` |
@@ -110,8 +111,8 @@ Follow `formats/meeting.md`.
 - Round 3 (skip with `--no-decision`): the owner writes `decision.md`.
 - Write `summary.md`: the question, a table of each proxy's round 1 and round 2 position, the decision, open vetoes, required changes, and the minority report. Quote and cite file paths for every claim.
 
-### redteam <artifact...> "<scenario>"
-Follow `formats/redteam.md`. Responses go to `01-attacks/<handle>.md`. Write `summary.md`, ranked, with attribution. End it with a section named "What to fix first": the fixes that answer the most findings and blocks, each with the proxies who raised it.
+### redteam <artifact...> "<scenario>" [--premortem]
+Follow `formats/redteam.md`. Responses go to `01-attacks/<handle>.md`. With `--premortem`, put the section "Premortem framing" in the FORMAT block instead of "One round, in parallel", and responses go to `01-premortem/<handle>.md`. A premortem summary starts with the failure stories that more than one proxy told. Write `summary.md`, ranked, with attribution. End it with a section named "What to fix first": the fixes that answer the most findings and blocks, each with the proxies who raised it.
 
 ### prep <artifact...> ["<context>"]
 Follow `formats/prep.md`. Responses go to `01-prep/<handle>.md`. Write `summary.md`: one section per proxy in decision order (owner, veto, approve, consult, inform), with their questions and the answers that satisfy them.

@@ -37,7 +37,7 @@ Run from this folder in Claude Code. Full details live in `.claude/skills/proxie
 | Command | What it does |
 |---|---|
 | `/proxies use <org>` | Pick the org and list its proxies |
-| `/proxies redteam <file> "<scenario>"` | Everyone tries to break it |
+| `/proxies redteam <file> "<scenario>"` | Everyone tries to break it. Add `--premortem` to have them imagine it already failed and say why |
 | `/proxies meeting <file> "<question>"` | Debate, then the decision owner calls it |
 | `/proxies prep <file>` | Each proxy's top questions |
 | `/proxies followup <run> <file>` | Check whether a revision answered their objections |

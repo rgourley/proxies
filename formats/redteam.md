@@ -13,6 +13,11 @@ If the run has a scenario, every breakage must relate to it.
 
 Aim for about 80 words per breakage. Put your strongest breakage first.
 
+## Premortem framing (only with --premortem)
+One round, in parallel. It is six months after launch, and the artifact failed. Each proxy tells how it failed, from their seat, as a short story with dates and names. Then they write up to five causes, in the same shape as breakages: **Where**, **How it failed**, **Severity**, and **Fix**. Work back from the failure. Do not list risks that might happen. Say what did happen.
+
+Aim for about 150 words for the story and about 80 words per cause.
+
 ## Synthesis
 The facilitator merges duplicates and keeps attribution for each one. It ranks the breakages by severity, then by how many seats found them. It lists every breakage. It does not drop the low-severity ones.
 
