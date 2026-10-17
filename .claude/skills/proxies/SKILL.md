@@ -48,33 +48,16 @@ The attendees are every proxy in `orgs/<org>/proxies/`, with two filters:
 - `--use <id>` keeps only proxies whose `uses` list contains that use case. The use cases are in `use_cases` in `org.md`. If the id is not there, stop and list the valid ids.
 - `--with a,b,c` sets the attendees to exactly those handles. It overrides `--use`.
 
-## Briefings
-For each attendee, write a briefing at `runs/<run>/prompts/<handle>.md`: the output of `node scripts/identity.ts <org> <handle>`, then a `FORMAT` block with the section of `formats/<format>.md` for this round. Do not summarize or shorten either part. `identity.ts` adds an EXPERTISE block when the org or the proxy has `knows`.
-
-The subagent prompt tells the proxy to read their briefing and the artifact, and holds the question and any transcripts. In total, a proxy receives:
+## Prompts
+`scripts/brief.ts` writes one prompt file per proxy for each round. Never write a prompt by hand.
 
 ```
-<output of scripts/identity.ts: SEAT, ORG, PROXY, and EXPERTISE if any>
-
-FORMAT
-<the section of formats/<format>.md for this round>
-
-CONTEXT (only when the run has context)
-<absolute path of knowledge/<id>/index.md, then the absolute path of its sources/ folder>
-
-ARTIFACT
-<absolute paths to each artifact file>
-<the question or scenario, verbatim>
-
-TRANSCRIPTS (rebuttal and decision rounds only)
-<other proxies' responses, each under "## <name> (<pronouns>), <title> said:">
+node scripts/brief.ts <run> <round> [--wordy] [--dissenter <handle>] [--images]
 ```
 
-The formats set word targets. With `--wordy`, delete each sentence that starts with "Aim for about" from the FORMAT block. Also with `--wordy`, the owner in meeting round 3 gets every round 1 response in full.
+`<round>` is the round folder, such as `01-attacks` or `02-rebuttal`, or `decision` for the owner's ruling in a meeting. The script reads `meta.md` and writes `runs/<run>/prompts/<round>/<handle>.md`. Each prompt holds the proxy's SEAT, ORG, PROXY, and EXPERTISE blocks, the FORMAT section for this round, the CONTEXT and ARTIFACT paths, the question, the TRANSCRIPTS for later rounds, and the OUTPUT path. It prints the path of each prompt.
 
-If `--dissenter <handle>` is present, add this line to that proxy's PROXY block: "You are the designated dissenter. Hold your position unless someone directly answers your block condition."
-
-Launch each proxy with `subagent_type: proxy`. Launch every proxy in a round in one message, so they run in parallel. Wait for all of them before the next round.
+Launch each proxy with `subagent_type: proxy` and this prompt only: "Read <prompt path> and follow it." Launch every proxy in a round in one message, so they run in parallel. Wait for all of them before the next round. If the script stops with an error, fix the cause. Do not work around it.
 
 ## Knowledge
 Knowledge is what proxies know. The artifact is what they judge. Never put an artifact in `knowledge/`, and never put knowledge in a run's `input/`.
@@ -84,7 +67,7 @@ Knowledge is what proxies know. The artifact is what they judge. Never put an ar
 ## Run folder
 Create `runs/<YYYY-MM-DD>-<org>-<format>-<slug>/`. Copy the artifact files to `input/`. Copy screenshots to `input/screens/`, and refer to them in the artifact as `Screenshot: screens/<file>.png`. Resize each copy so its long side is at most 1200 pixels, with `sips -Z 1200 <file>` on macOS. Never resize the original.
 
-When the artifact has screenshots, write a screen description before round 1. Launch one `describer` subagent with the artifact path and the output path `input/screens.md`. It writes every visible word and control on each screenshot, and no opinions. Check that it described every screenshot that the artifact lists. Then give each proxy `input/screens.md` in the ARTIFACT block, and the screenshot folder as a path to open only when a point depends on how a screen looks. With `--images`, skip the description and give the proxies the screenshots only. Write `meta.md` first, with this frontmatter and no body:
+When the artifact has screenshots, write a screen description before round 1. Launch one `describer` subagent with the artifact path and the output path `input/screens.md`. It writes every visible word and control on each screenshot, and no opinions. Check that it described every screenshot that the artifact lists. `brief.ts` then gives each proxy the description, and the screenshot folder to open only when a point depends on how a screen looks. With `--images`, skip the description, and pass `--images` to `brief.ts` so the proxies get the screenshots only. Write `meta.md` first, with this frontmatter and no body:
 
 ```
 ---
@@ -93,6 +76,7 @@ format: <format>
 date: <YYYY-MM-DD>
 sequence: <one more than the highest sequence in runs/>
 context: <knowledge id, if the run has context>
+question: "<the question or scenario, verbatim, in double quotes>"
 nav: <same as title>
 title: <what was reviewed, under 40 characters, such as "Prototype: guest sharing" or "Pricing page v2". Name the artifact, not the format or the proxies. Two runs never share a title>
 artifact: input/<first artifact file>
@@ -182,6 +166,11 @@ Do this yourself. With no file, the org is on the clipboard from the results pag
 
 ### pages
 Each org has its own results page. Run `node scripts/runs.ts --org <org>` for every org that has runs. Republish each `runs.<org>.artifact.html` with the Artifact tool to that org's URL. Pass every screenshot of that org's runs in `files`, with the same path as on disk, such as `runs/<run>/input/screens/<file>.png`. The URLs are in `.claude/pages.local.md`, one line per org as `<org>: <url>`. That file is not committed. An org with no URL gets a new artifact. Add its URL to that file. Never publish one org's runs on another org's page.
+
+## Check before you report
+After you write `summary.md`, and before you open or publish the page:
+1. Run `node scripts/check.ts <run>`. Fix every error. Fix every quote that it says no response contains.
+2. Read the summary against the responses. Every position, number, date, name, and event that you attribute to a proxy must appear in that proxy's response. Fix or remove any claim that you cannot point to. Do not round a proxy's words up into a stronger claim.
 
 ## Report back
 The results page is the default place for results of `meeting`, `redteam`, `prep`, `followup`, `compare`, and `workshop`. `ask` and `talk` answer in chat.

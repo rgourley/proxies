@@ -36,7 +36,7 @@ These are the names for every part of Proxies. Use these terms in files, code, c
 | **Command** | One `/proxies` action. Some commands run a format. Others manage orgs, proxies, and knowledge. | `.claude/skills/proxies/SKILL.md` |
 | **Run** | One use of a format: the proxies, the artifact, and any context. | `runs/<run>/` |
 | **Round** | One step of a format. Each round has a numbered folder. | `runs/<run>/<NN>-<round>/` |
-| **Briefing** | The text that one proxy receives for one run: seat, org, proxy, expertise, and format. | `runs/<run>/prompts/<handle>.md` |
+| **Prompt** | Everything that one proxy receives for one round: seat, org, proxy, expertise, format, context, artifact, transcripts, and output path. `scripts/brief.ts` writes it. | `runs/<run>/prompts/<round>/<handle>.md` |
 | **Response** | What one proxy writes in one round. | `runs/<run>/<NN>-<round>/<handle>.md` |
 | **Verdict** | The first line of a response: Block, Rework, Ship with changes, or Ship. | the `**Verdict**:` line |
 | **Summary** | The facilitator's write-up of a run. | `runs/<run>/summary.md` |

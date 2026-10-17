@@ -6,7 +6,9 @@
     "pages": "node scripts/runs.ts",
     "export-org": "node scripts/export-org.ts",
     "import-org": "node scripts/import-org.ts",
-    "test": "node --test scripts/*.test.ts"
+    "test": "node --test scripts/*.test.ts",
+    "brief": "node scripts/brief.ts",
+    "check": "node scripts/check.ts"
   },
   "license": "PolyForm-Shield-1.0.0"
 }

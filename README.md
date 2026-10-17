@@ -179,7 +179,7 @@ runs/<run>/             meta.md, input/ (the artifact), one folder per round, su
 .claude/skills/proxies/ the facilitator's instructions
 ```
 
-A proxy's briefing is its seat, then `org.md`, then its proxy file, then any expertise. Later layers win.
+A proxy's prompt is its seat, then `org.md`, then its proxy file, then any expertise, then the round's instructions. Later layers win. `npm run brief` writes the prompts, and `npm run check` checks every run.
 
 ## License
 

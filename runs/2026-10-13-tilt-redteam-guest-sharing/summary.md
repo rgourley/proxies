@@ -11,7 +11,7 @@ Three of six would stop it. The other three want changes first.
 | # | Finding | Severity | Raised by |
 |---|---|---|---|
 | 1 | The weekly AI summary is written from every comment, including internal ones, and goes to guests. Fernhill's margin talk lands in a client's inbox | Critical | All 6 |
-| 2 | No single list of every outside person in the workspace, so nobody can answer "who outside your company can see this project" | Critical | Ana, Jo, Ken, Rita |
+| 2 | No single list of every outside person in the workspace, so nobody can answer "who outside your company can see our project" | Critical | Ana, Jo, Ken, Rita |
 | 3 | The magic link lasts 30 days and can be forwarded. Anyone holding it gets in | Critical | Sam, Ana, Ken, Theo |
 | 4 | Removing a guest doesn't end their access everywhere. Forwarded links and the summary keep reaching them | Critical | Sam, Theo |
 | 5 | A client who clicks Edit sends Ana a request to buy a seat for her own client, with no context | High | Jo, Ana, Ken, Rita |
