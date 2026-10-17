@@ -148,7 +148,9 @@ The import never overwrites an existing org. Add `--as <new-id>` to import it un
 
 ## Sample orgs
 
-Three fictional orgs ship with the repo so you can try it right away. `tilt` is a SaaS company that makes a project planning tool. `brightpath` is a 14-site clinic network. `northpine` is a game studio that runs one live game and is building its next one. They hold proxies only. You bring the thing to review:
+Four fictional orgs ship with the repo so you can try it right away. `tilt` is a SaaS company that makes a project planning tool. `brightpath` is a 14-site clinic network. `northpine` is a game studio that runs one live game and is building its next one. `options-panel` is a group: a new trader, a veteran trader, an educator, and a compliance officer.
+
+Three sample runs show the output: a Tilt red team and a Tilt premortem of a guest-sharing flow, and an options-panel workshop on how a retail trader should learn options. Run `npm run pages -- --org tilt` and open `runs.tilt.html` to see them. Bring your own artifact for anything else:
 
 ```
 /proxies use tilt
@@ -173,13 +175,26 @@ orgs/<org>/org.md       the org: type, business, rules, culture, decision rights
 orgs/<org>/proxies/     one file per proxy; frontmatter feeds the card
 orgs/<org>/calibration/ one log per proxy: real feedback, misses, and the edits they caused
 knowledge/<id>/         a collection: index.md plus sources/
-formats/                the review procedures: meeting, redteam, prep, followup, compare, ask/talk, calibrate
-runs/<run>/             meta.md, input/ (the artifact), one folder per round, summary.md
-.claude/agents/         the proxy agent (one proxy per subagent)
-.claude/skills/proxies/ the facilitator's instructions
+formats/                the review procedures, each with a Facilitator section: meeting, redteam, prep,
+                        followup, compare, workshop, ask/talk, calibrate
+runs/<run>/             meta.md, input/ (the artifact and its screens.md), prompts/, one folder per round, summary.md
+scripts/                brief.ts (prompts), check.ts (run checks), runs.ts (results page), identity.ts,
+                        export-org.ts and import-org.ts
+.claude/agents/         proxy.md (one proxy per subagent) and describer.md (screen descriptions)
+.claude/skills/proxies/ SKILL.md (what every run needs) and manage.md (org, proxy, knowledge, and page commands)
 ```
 
 A proxy's prompt is its seat, then `org.md`, then its proxy file, then any expertise, then the round's instructions. Later layers win. `npm run brief` writes the prompts, and `npm run check` checks every run.
+
+## What a run costs
+
+A 12-proxy review of 50 screenshots used to cost about 2.6 million tokens. Three things bring it to about 0.85 million on the main model, plus 0.16 million on a cheaper one:
+
+- A `describer` agent on a cheaper model writes down every word and control on each screenshot once. Proxies read that text instead of the images, and open a screenshot only when a point depends on how it looks. Pass `--images` to skip it.
+- Proxies read a collection's index and its **Required** sources first, and open other sources only when a point depends on them.
+- Screenshots are resized to 1200 pixels wide when they are copied into a run.
+
+The proxies themselves run on your session's model, because judgment is where quality matters.
 
 ## License
 
