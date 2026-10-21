@@ -142,9 +142,16 @@ A proxy's prompt layers its seat, its org, its own card, any expertise, and the 
 
 Runs are built to be cheap. A `describer` agent on a cheaper model writes down every word on each screenshot once, and proxies read that text instead of the images. Proxies read a collection's index and Required sources, and open the rest only when a point depends on it. A 12-proxy review of 50 screenshots dropped from about 2.6 million tokens to 0.85 million on the main model, plus 0.16 million on the cheaper one. The proxies themselves run on your session's model, because judgment is where quality matters.
 
-## Privacy
+## Privacy and terms
 
-Proxies collects no data and has no server. Your orgs and runs stay in your project folder. See [PRIVACY.md](PRIVACY.md).
+Proxies collects no data and has no server. Your orgs, knowledge, and runs stay in your project folder. Data leaves your machine only in these cases:
+
+- **The model.** Files you review, and files Proxies reads for context, go to the model provider of the tool you run it in: Anthropic for Claude Code, OpenAI for Codex.
+- **`/proxies knowledge add` with a link.** Proxies fetches that page to save a copy, using the tool's own fetch or a connector you already have, such as Notion.
+- **`/proxies pages`.** It publishes a results page to your claude.ai account as a private artifact, until you share it.
+- **Opening a results page.** The browser loads fonts from Google Fonts. No review content is sent.
+
+See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md).
 
 ## License
 

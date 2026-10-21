@@ -11,6 +11,7 @@ Everything Proxies creates stays in the folder where you run it: your orgs, prox
 - **The AI model.** Proxies runs inside Claude Code or Codex. When you run a review, the files you give it and the files it reads are sent to the model provider you use, as with any other request in that tool. Anthropic's privacy policy covers Claude Code, and OpenAI's covers Codex.
 - **Fonts on the results page.** When you open a results page in a browser, the browser loads its fonts from Google Fonts. Google's privacy policy covers that request. The page sends no review content to Google.
 - **Pages you publish.** If you publish a results page as a Claude artifact, it is stored in your claude.ai account and is private until you share it. Anthropic's privacy policy covers it.
+- **Links you save as knowledge.** `/proxies knowledge add` with a link fetches that page to save a copy in your project folder.
 - **Files you share.** An org export is a file on your machine. It goes only where you send it.
 
 ## Credentials
