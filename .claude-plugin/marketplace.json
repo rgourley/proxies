@@ -8,7 +8,8 @@
     {
       "name": "proxies",
       "source": "./",
-      "description": "Simulated stakeholder reviews for flows, specs, and prototypes."
+      "description": "Simulated stakeholder reviews for flows, specs, and prototypes.",
+      "displayName": "Proxies: simulated stakeholder reviews"
     }
   ]
 }

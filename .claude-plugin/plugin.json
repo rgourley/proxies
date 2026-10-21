@@ -1,7 +1,8 @@
 {
   "name": "proxies",
-  "version": "0.2.1",
-  "description": "Simulated stakeholder reviews: run a red team, meeting, premortem, or workshop with proxies for the roles in an org, against your flows, specs, and prototypes.",
+  "displayName": "Proxies: simulated stakeholder reviews",
+  "version": "0.2.2",
+  "description": "Run a red team, meeting, premortem, or workshop with proxies for the roles in an org or group, against your flows, specs, and prototypes.",
   "author": {
     "name": "Rob Gourley"
   },
@@ -14,5 +15,8 @@
     "stakeholders",
     "personas",
     "product"
-  ]
+  ],
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/rgourley/proxies#readme",
+  "supportUrl": "https://github.com/rgourley/proxies/issues"
 }
