@@ -26,17 +26,11 @@ In Claude Code:
 
 Then open Claude Code in the folder where you want your reviews to live, and run `/proxies init`. It creates `orgs/`, `knowledge/`, and `runs/` there, and offers to copy in the sample orgs. Your orgs and runs stay in that folder, so each project keeps its own reviews, and the plugin itself never holds your data.
 
-To work on Proxies itself, clone the repo and load it in place with `claude --plugin-dir .`.
+To work on Proxies itself, load your copy of the repository in place with `claude --plugin-dir .`.
 
 ### Codex
 
-Clone the repo, then run the installer that ships in it. The installer links the skill into `~/.agents/skills/` and writes the `proxy` and `describer` agents to `~/.codex/agents/`, from the same files Claude Code uses. It downloads nothing.
-
-```bash
-git clone https://github.com/rgourley/proxies.git
-```
-
-Then, from inside the `proxies` folder, run `node scripts/install-codex.ts`. Run it again after you pull. Then use `$proxies` in Codex from any folder, the same way as `/proxies` in Claude Code.
+Get a copy of [this repository](https://github.com/rgourley/proxies), then run the installer that ships in it, `scripts/install-codex.ts`, with Node from inside the repository folder. The installer links the skill into `~/.agents/skills/` and writes the `proxy` and `describer` agents to `~/.codex/agents/`, from the same files Claude Code uses. It downloads nothing. Run it again after you update your copy. Then use `$proxies` in Codex from any folder, the same way as `/proxies` in Claude Code.
 
 <img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
 
