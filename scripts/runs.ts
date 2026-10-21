@@ -3,7 +3,7 @@
 // The script writes runs.html for local use and runs.artifact.html for the Artifact publisher.
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PROXY_SCRIPT, FONTS, KNOWLEDGE_DIR, PROJECT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
+import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PROXY_SCRIPT, FONTS, KNOWLEDGE_DIR, PROJECT, RUNS_DIR, THEME_CSS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
 import type { Frontmatter, Org, Proxy } from "./lib.ts";
 import { orgBundle } from "./bundle.ts";
 import { card, CARD_CSS } from "./card.ts";
@@ -103,8 +103,8 @@ const ROUND_NAMES: ReadonlyMap<string, { label: string; note: string }> = new Ma
 ]);
 
 function roundName(folder: string): { label: string; note: string } {
-  const key = folder.replace(/^\d+-/, "");
-  return ROUND_NAMES.get(key) ?? { label: key.replace(/-/g, " "), note: "" };
+  const round = folder.replace(/^\d+-/, "");
+  return ROUND_NAMES.get(round) ?? { label: round.replace(/-/g, " "), note: "" };
 }
 
 function findProxy(org: Org, handle: string, where: string): Proxy {
@@ -479,7 +479,7 @@ function runSection(run: Run): string {
 </section>`;
 }
 
-const STYLE = `${TOKENS}
+const STYLE = `${THEME_CSS}
 .top { display: grid; gap: 6px; }
 .run { scroll-margin-top: 16px; }
 .run[hidden] { display: none; }

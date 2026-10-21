@@ -84,29 +84,29 @@ const SEAT_COLORS: ReadonlyMap<string, string> = new Map([
 const FALLBACK_COLOR = "#6b6f76";
 export const DECISION_ORDER: readonly Decision[] = ["owner", "veto", "approve", "consult", "inform"];
 
-// The parser reads a small YAML subset: "key: value" lines and "key:" lines followed by "  - item" lines.
+// The parser reads a small YAML subset: "name: value" lines and "name:" lines followed by "  - item" lines.
 export function parse(source: string, file: string): Parsed {
   const match = source.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) throw new Error(`No frontmatter in ${file}`);
   const fields: Frontmatter = new Map();
-  let listKey: string | null = null;
+  let listName: string | null = null;
   for (const line of match[1].split("\n")) {
     const item = line.match(/^\s+-\s+(.*)$/);
-    if (item && listKey) {
-      const list = fields.get(listKey);
+    if (item && listName) {
+      const list = fields.get(listName);
       if (!Array.isArray(list)) throw new Error(`List item outside a list in ${file}: ${line}`);
       list.push(unquote(item[1]));
       continue;
     }
     const pair = line.match(/^([a-z_]+):\s*(.*)$/);
     if (!pair) continue;
-    const [, key, value] = pair;
+    const [, name, value] = pair;
     if (value === "") {
-      fields.set(key, []);
-      listKey = key;
+      fields.set(name, []);
+      listName = name;
     } else {
-      fields.set(key, unquote(value));
-      listKey = null;
+      fields.set(name, unquote(value));
+      listName = null;
     }
   }
   return { fields, body: match[2].trim() };
@@ -116,23 +116,23 @@ function unquote(value: string): string {
   return value.trim().replace(/^"(.*)"$/, "$1");
 }
 
-export function text(fields: Frontmatter, key: string, file: string): string {
-  const value = fields.get(key);
-  if (typeof value !== "string") throw new Error(`Missing text field "${key}" in ${file}`);
+export function text(fields: Frontmatter, name: string, file: string): string {
+  const value = fields.get(name);
+  if (typeof value !== "string") throw new Error(`Missing text field "${name}" in ${file}`);
   return value;
 }
 
-export function list(fields: Frontmatter, key: string, file: string): string[] {
-  const value = fields.get(key);
-  if (!Array.isArray(value)) throw new Error(`Missing list field "${key}" in ${file}`);
+export function list(fields: Frontmatter, name: string, file: string): string[] {
+  const value = fields.get(name);
+  if (!Array.isArray(value)) throw new Error(`Missing list field "${name}" in ${file}`);
   return value;
 }
 
 // Some fields only apply to some orgs. An absent optional list is empty.
-export function optionalList(fields: Frontmatter, key: string, file: string): string[] {
-  const value = fields.get(key);
+export function optionalList(fields: Frontmatter, name: string, file: string): string[] {
+  const value = fields.get(name);
   if (value === undefined) return [];
-  if (!Array.isArray(value)) throw new Error(`Field "${key}" must be a list in ${file}`);
+  if (!Array.isArray(value)) throw new Error(`Field "${name}" must be a list in ${file}`);
   return value;
 }
 
@@ -174,8 +174,8 @@ function checkKnowledge(ids: string[], file: string): void {
   if (missing.length > 0) throw new Error(`${file} knows ${missing.join(", ")}, but knowledge/<id>/index.md does not exist for it`);
 }
 
-function optionalText(fields: Frontmatter, key: string): string | null {
-  const value = fields.get(key);
+function optionalText(fields: Frontmatter, name: string): string | null {
+  const value = fields.get(name);
   return typeof value === "string" ? value : null;
 }
 
@@ -301,7 +301,7 @@ export function copyButton(value: string): string {
 }
 
 // Theme tokens follow the api-dashboard persona: near-white or near-black surfaces, hairline borders, one blue accent.
-export const TOKENS = `
+export const THEME_CSS = `
 :root {
   --bg: #fdfdfd; --card: #ffffff; --panel: #f2f2f4; --hover: #ebebed;
   --ink: #141416; --ink-2: #505058; --muted: #85858f; --rule: rgba(0,0,0,.09); --rule-2: rgba(0,0,0,.14);

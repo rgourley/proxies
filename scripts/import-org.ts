@@ -8,7 +8,7 @@ import { ORGS_DIR, PROJECT, PLUGIN } from "./lib.ts";
 const SAFE_NAME = /^[a-z0-9][a-z0-9-]*\.md$/;
 const SAFE_ID = /^[a-z0-9][a-z0-9-]*$/;
 
-type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+type Json = string | number | boolean | null | Json[] | { [field: string]: Json };
 
 function isFile(value: Json): boolean {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -16,7 +16,7 @@ function isFile(value: Json): boolean {
 }
 
 function parse(path: string): OrgBundle {
-  const raw: { [key: string]: Json } = JSON.parse(readFileSync(path === "-" ? 0 : path, "utf8"));
+  const raw: { [field: string]: Json } = JSON.parse(readFileSync(path === "-" ? 0 : path, "utf8"));
   // Version 1 files name the proxies list "people". Version 2 files name it "proxies".
   if (raw.format !== "proxies-org" || (raw.version !== 1 && raw.version !== 2)) throw new Error(`${path} is not a proxies-org v1 or v2 file (format=${String(raw.format)}, version=${String(raw.version)})`);
   if (raw.version === 1) {
@@ -27,9 +27,9 @@ function parse(path: string): OrgBundle {
   const lists = ["proxies", "calibration", "seats"] as const;
   if (typeof raw.org !== "string" || !SAFE_ID.test(raw.org)) throw new Error(`${path} has an invalid org id: ${String(raw.org)}`);
   if (typeof raw.orgFile !== "string") throw new Error(`${path} has no org.md text`);
-  for (const key of lists) {
-    const list = raw[key];
-    if (!Array.isArray(list) || !list.every(isFile)) throw new Error(`${path} has an invalid "${key}" list. Each entry needs a lowercase .md name and text`);
+  for (const field of lists) {
+    const list = raw[field];
+    if (!Array.isArray(list) || !list.every(isFile)) throw new Error(`${path} has an invalid "${field}" list. Each entry needs a lowercase .md name and text`);
   }
   return raw as OrgBundle;
 }

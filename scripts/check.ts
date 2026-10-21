@@ -21,7 +21,7 @@ function checkRun(id: string, orgs: Org[]): Problem[] {
   const dir = join(RUNS_DIR, id);
   const metaFile = join(dir, "meta.md");
   const { fields } = parse(readFileSync(metaFile, "utf8"), metaFile);
-  for (const key of REQUIRED) if (!fields.has(key)) add("error", `meta.md has no "${key}"`);
+  for (const field of REQUIRED) if (!fields.has(field)) add("error", `meta.md has no "${field}"`);
   const org = orgs.find((o) => o.id === fields.get("org"));
   if (!org) { add("error", `meta.md names unknown org "${String(fields.get("org"))}"`); return problems; }
   const format = String(fields.get("format") ?? "");
