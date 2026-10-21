@@ -1,6 +1,7 @@
 // The shape of an exported org, and the function that builds one. Every file is kept as its exact markdown text.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { ORGS_DIR, seatFile } from "./lib.ts";
 
 export type BundleFile = { name: string; text: string };
 
@@ -28,18 +29,14 @@ function seatOf(proxy: BundleFile): string {
   return match[1];
 }
 
-export function orgBundle(root: string, org: string): OrgBundle {
-  const dir = join(root, "orgs", org);
+export function orgBundle(org: string): OrgBundle {
+  const dir = join(ORGS_DIR, org);
   const orgFile = join(dir, "org.md");
   if (!existsSync(orgFile)) throw new Error(`Org not found: ${orgFile}`);
   const proxies = mdFiles(join(dir, "proxies"));
   if (proxies.length === 0) throw new Error(`Org ${org} has no proxies in ${join(dir, "proxies")}`);
   const seatIds = [...new Set(proxies.map(seatOf))].sort();
-  const seats = seatIds.map((id) => {
-    const file = join(root, "seats", `${id}.md`);
-    if (!existsSync(file)) throw new Error(`Seat ${id} is used by org ${org} but ${file} does not exist`);
-    return { name: `${id}.md`, text: readFileSync(file, "utf8") };
-  });
+  const seats = seatIds.map((id) => ({ name: `${id}.md`, text: readFileSync(seatFile(id), "utf8") }));
   return {
     format: "proxies-org",
     version: 2,

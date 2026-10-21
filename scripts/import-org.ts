@@ -4,8 +4,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import type { OrgBundle, BundleFile } from "./bundle.ts";
-
-const ROOT = new URL("..", import.meta.url).pathname;
+import { ORGS_DIR, PROJECT, PLUGIN } from "./lib.ts";
 const SAFE_NAME = /^[a-z0-9][a-z0-9-]*\.md$/;
 const SAFE_ID = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -49,12 +48,14 @@ function main(): void {
   const id = asIndex >= 0 ? args[asIndex + 1] : data.org;
   if (!id || !SAFE_ID.test(id)) throw new Error(`Invalid org id for --as: ${String(id)}`);
 
-  const dir = join(ROOT, "orgs", id);
+  const dir = join(ORGS_DIR, id);
   if (existsSync(dir)) throw new Error(`orgs/${id} already exists. Use --as <new-org-id> to import under another id`);
 
+  // A seat conflicts when the project or the plugin already has a different seat with the same name.
+  const existing = (name: string): string | null => [join(PROJECT, "seats", name), join(PLUGIN, "seats", name)].find((f) => existsSync(f)) ?? null;
   const conflicts = data.seats.filter((s) => {
-    const local = join(ROOT, "seats", s.name);
-    return existsSync(local) && readFileSync(local, "utf8") !== s.text;
+    const local = existing(s.name);
+    return local !== null && readFileSync(local, "utf8") !== s.text;
   });
   if (conflicts.length > 0) {
     throw new Error(`These seats differ from this repo's copies: ${conflicts.map((s) => s.name).join(", ")}. Reconcile seats/ before importing ${file === "-" ? "this org" : basename(file)}`);
@@ -67,8 +68,9 @@ function main(): void {
     mkdirSync(join(dir, "calibration"), { recursive: true });
     for (const c of data.calibration) writeFileSync(join(dir, "calibration", c.name), c.text);
   }
-  const added = data.seats.filter((s) => !existsSync(join(ROOT, "seats", s.name)));
-  for (const s of added) writeFileSync(join(ROOT, "seats", s.name), s.text);
+  const added = data.seats.filter((s) => existing(s.name) === null);
+  if (added.length > 0) mkdirSync(join(PROJECT, "seats"), { recursive: true });
+  for (const s of added) writeFileSync(join(PROJECT, "seats", s.name), s.text);
 
   console.log(`Imported orgs/${id}: ${data.proxies.length} proxies, ${added.length} new seats`);
 }

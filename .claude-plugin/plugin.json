@@ -1,0 +1,10 @@
+{
+  "name": "proxies",
+  "version": "0.2.0",
+  "description": "Simulated stakeholder reviews: run a red team, meeting, premortem, or workshop with proxies for the roles in an org, against your flows, specs, and prototypes.",
+  "author": { "name": "Rob Gourley" },
+  "homepage": "https://github.com/rgourley/proxies",
+  "repository": "https://github.com/rgourley/proxies",
+  "license": "PolyForm-Shield-1.0.0",
+  "keywords": ["design review", "red team", "stakeholders", "personas", "product"]
+}

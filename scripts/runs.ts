@@ -3,7 +3,7 @@
 // The script writes runs.html for local use and runs.artifact.html for the Artifact publisher.
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PROXY_SCRIPT, FONTS, ROOT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
+import { COPY_SCRIPT, DECISION_LABEL, FAVICON, LOGO, avatarSprite, PROXY_SCRIPT, FONTS, KNOWLEDGE_DIR, PROJECT, RUNS_DIR, TOKENS, cardId, decisionPill, esc, face, list, localDocument, parse, readOrgs, seatColor, seatPill, sidebar, text } from "./lib.ts";
 import type { Frontmatter, Org, Proxy } from "./lib.ts";
 import { orgBundle } from "./bundle.ts";
 import { card, CARD_CSS } from "./card.ts";
@@ -65,8 +65,8 @@ type Run = {
   rounds: Round[];
 };
 
-const OUT_LOCAL = join(ROOT, "runs.html");
-const OUT_ARTIFACT = join(ROOT, "runs.artifact.html");
+const OUT_LOCAL = join(PROJECT, "runs.html");
+const OUT_ARTIFACT = join(PROJECT, "runs.artifact.html");
 
 // The facilitator writes the summary of every run. It shows first.
 const SUMMARY_FILE = "summary.md";
@@ -131,7 +131,7 @@ function sourceOf(fields: Map<string, string | string[]>, file: string): { url: 
 
 // A knowledge collection has an index and a sources folder. Each source starts with "# Title" and a "Source: <url>" line.
 function readContext(id: string): Context {
-  const dir = join(ROOT, "knowledge", id);
+  const dir = join(KNOWLEDGE_DIR, id);
   const indexFile = join(dir, "index.md");
   if (!existsSync(indexFile)) throw new Error(`Knowledge collection not found: ${indexFile}`);
   const { fields } = parse(readFileSync(indexFile, "utf8"), indexFile);
@@ -750,7 +750,7 @@ const RUN_SCRIPT = `<script>
 
 // Each org's export bundle sits in the page as JSON. "<" is escaped so the text cannot close the script tag.
 function bundleScript(org: Org): string {
-  const json = JSON.stringify(orgBundle(ROOT, org.id)).replace(/</g, "\\u003c");
+  const json = JSON.stringify(orgBundle(org.id)).replace(/</g, "\\u003c");
   return `<script type="application/json" class="org-bundle" data-org="${esc(org.id)}">${json}</script>`;
 }
 
@@ -780,7 +780,7 @@ ${POP_SCRIPT}
 ${ORG_SCRIPT}`;
 }
 
-const SHARE_DIR = join(ROOT, "share");
+const SHARE_DIR = join(PROJECT, "share");
 
 // The share file holds one run and the cards of its attendees only. It has no sidebar and no org export.
 function shareFragment(run: Run): string {
@@ -822,7 +822,7 @@ function inlineScreens(html: string): string {
   return html
     .replace(/data-image="runs\/[^"]+\.png"/g, 'data-image="thumb"')
     .replace(/src="(runs\/[^"]+\.png)"/g, (_m, path: string) => {
-      const file = join(ROOT, path);
+      const file = join(PROJECT, path);
       if (!existsSync(file)) throw new Error(`Screenshot not found: ${path}`);
       return `src="data:image/png;base64,${readFileSync(file).toString("base64")}"`;
     })

@@ -1,0 +1,14 @@
+{
+  "name": "proxies",
+  "owner": {
+    "name": "Rob Gourley"
+  },
+  "description": "Proxies: simulated stakeholder reviews in Claude Code.",
+  "plugins": [
+    {
+      "name": "proxies",
+      "source": "./",
+      "description": "Simulated stakeholder reviews for flows, specs, and prototypes."
+    }
+  ]
+}

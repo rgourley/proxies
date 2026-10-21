@@ -40,9 +40,27 @@ export type Frontmatter = Map<string, string | string[]>;
 
 export type Parsed = { fields: Frontmatter; body: string };
 
-export const ROOT = new URL("..", import.meta.url).pathname;
-export const ORGS_DIR = join(ROOT, "orgs");
-export const RUNS_DIR = join(ROOT, "runs");
+// PLUGIN is the folder that holds the tool: formats, seats, and scripts.
+// PROJECT is the folder where the user works. It holds the user's data: orgs, knowledge, runs, and results pages.
+// The scripts run from the project folder. When the user works inside the plugin's own repo, the two folders are the same.
+export const PLUGIN = new URL("..", import.meta.url).pathname;
+export const PROJECT = process.cwd();
+export const ORGS_DIR = join(PROJECT, "orgs");
+export const RUNS_DIR = join(PROJECT, "runs");
+export const KNOWLEDGE_DIR = join(PROJECT, "knowledge");
+
+// A seat in the project folder overrides the seat with the same name in the plugin.
+export function seatFile(id: string): string {
+  const own = join(PROJECT, "seats", `${id}.md`);
+  if (existsSync(own)) return own;
+  const shipped = join(PLUGIN, "seats", `${id}.md`);
+  if (existsSync(shipped)) return shipped;
+  throw new Error(`Seat "${id}" is in neither ${join(PROJECT, "seats")} nor ${join(PLUGIN, "seats")}`);
+}
+
+export function formatFile(format: string): string {
+  return join(PLUGIN, "formats", `${format}.md`);
+}
 
 
 
@@ -152,7 +170,7 @@ function orgType(fields: Frontmatter, file: string): OrgType {
 
 // Every "knows" id must name a folder in knowledge/ that has an index.md.
 function checkKnowledge(ids: string[], file: string): void {
-  const missing = ids.filter((k) => !existsSync(join(ROOT, "knowledge", k, "index.md")));
+  const missing = ids.filter((k) => !existsSync(join(KNOWLEDGE_DIR, k, "index.md")));
   if (missing.length > 0) throw new Error(`${file} knows ${missing.join(", ")}, but knowledge/<id>/index.md does not exist for it`);
 }
 

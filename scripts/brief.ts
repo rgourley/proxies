@@ -4,7 +4,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
-import { ROOT, RUNS_DIR, parse, text, list, readOrg } from "./lib.ts";
+import { KNOWLEDGE_DIR, PLUGIN, PROJECT, RUNS_DIR, formatFile, parse, text, list, readOrg } from "./lib.ts";
 import type { Frontmatter, Org } from "./lib.ts";
 
 // Each round name maps to the format section that holds its instructions. A round with no entry uses the whole format.
@@ -41,7 +41,7 @@ function sections(markdown: string): Section[] {
 
 // The FORMAT block holds the round's section, then the Verdict and Language sections. Other rounds' sections and the Facilitator section are left out.
 function formatBlock(format: string, round: string, wordy: boolean): string {
-  const file = join(ROOT, "formats", `${format}.md`);
+  const file = formatFile(format);
   if (!existsSync(file)) throw new Error(`No format file: ${file}`);
   const source = readFileSync(file, "utf8");
   const all = sections(source);
@@ -78,7 +78,7 @@ function nameLine(org: Org, handle: string): string {
 function contextBlock(run: Run): string {
   const id = run.fields.get("context");
   if (typeof id !== "string") return "";
-  const dir = join(ROOT, "knowledge", id);
+  const dir = join(KNOWLEDGE_DIR, id);
   if (!existsSync(join(dir, "index.md"))) throw new Error(`Context "${id}" in ${run.metaFile} has no knowledge/${id}/index.md`);
   return `CONTEXT\n${join(dir, "index.md")}\n${join(dir, "sources")}/\n\n`;
 }
@@ -134,7 +134,7 @@ function transcriptsBlock(run: Run, round: string, handle: string, wordy: boolea
   if (run.format === "followup") {
     const prev = join(run.dir, "previous.txt");
     if (!existsSync(prev)) throw new Error(`A followup run needs previous.txt in ${run.id}`);
-    const prevDir = join(ROOT, readFileSync(prev, "utf8").trim());
+    const prevDir = join(PROJECT, readFileSync(prev, "utf8").trim());
     const own = readdirSync(prevDir).filter((f) => /^\d+-/.test(f)).sort().map((f) => join(prevDir, f, `${handle}.md`)).filter(existsSync);
     return `TRANSCRIPTS\n## You said earlier:\n${own.join("\n")}\n\n`;
   }
@@ -165,7 +165,7 @@ function main(): void {
   mkdirSync(promptDir, { recursive: true });
   const handles = attendeesFor(run, round);
   for (const handle of handles) {
-    let identity = execFileSync("node", [join(ROOT, "scripts", "identity.ts"), run.org.id, handle], { encoding: "utf8" }).trim();
+    let identity = execFileSync("node", [join(PLUGIN, "scripts", "identity.ts"), run.org.id, handle], { encoding: "utf8" }).trim();
     if (dissenter === handle) {
       identity = identity.replace(/\nPROXY\n---\n/, "\nPROXY\nYou are the designated dissenter. Hold your position unless someone directly answers your block condition.\n---\n");
     }

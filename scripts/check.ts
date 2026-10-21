@@ -2,7 +2,7 @@
 // Usage: node scripts/check.ts [run...]
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ROOT, RUNS_DIR, parse, readOrgs } from "./lib.ts";
+import { KNOWLEDGE_DIR, RUNS_DIR, formatFile, parse, readOrgs } from "./lib.ts";
 import type { Org } from "./lib.ts";
 
 type Problem = { level: "error" | "warning"; run: string; message: string };
@@ -25,12 +25,12 @@ function checkRun(id: string, orgs: Org[]): Problem[] {
   const org = orgs.find((o) => o.id === fields.get("org"));
   if (!org) { add("error", `meta.md names unknown org "${String(fields.get("org"))}"`); return problems; }
   const format = String(fields.get("format") ?? "");
-  if (!existsSync(join(ROOT, "formats", `${format}.md`))) add("error", `No format file for "${format}"`);
+  if (!existsSync(formatFile(format))) add("error", `No format file for "${format}"`);
   const attendees = Array.isArray(fields.get("attendees")) ? (fields.get("attendees") as string[]) : [];
   const handles = new Set(org.proxies.map((p) => p.handle));
   for (const h of attendees) if (!handles.has(h)) add("error", `Attendee "${h}" is not a proxy in ${org.id}`);
   const context = fields.get("context");
-  if (typeof context === "string" && !existsSync(join(ROOT, "knowledge", context, "index.md"))) add("error", `Context "${context}" has no knowledge/${context}/index.md`);
+  if (typeof context === "string" && !existsSync(join(KNOWLEDGE_DIR, context, "index.md"))) add("error", `Context "${context}" has no knowledge/${context}/index.md`);
   if (format === "meeting" && typeof fields.get("owner") !== "string") add("error", `A meeting needs "owner" in meta.md`);
 
   // The artifact, and every screenshot it names.

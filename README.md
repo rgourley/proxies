@@ -15,15 +15,18 @@ A simulated room of stakeholders you run an idea, prototype, or design past befo
 
 ## Setup
 
-You need Node 22 or later and Claude Code. Nothing to install.
+You need Claude Code and Node.js 22.18 or later. Nothing else to install: Proxies has no dependencies, and the skill runs its own scripts.
 
-```bash
-git clone https://github.com/rgourley/proxies.git
-cd proxies
-claude
+In Claude Code:
+
+```
+/plugin marketplace add rgourley/proxies
+/plugin install proxies@proxies
 ```
 
-Claude Code loads the `/proxies` skill and its agents from `.claude/` when it starts in this folder. Start a new session after you clone or pull. Run `/proxies use tilt` to check that it works.
+Then open Claude Code in the folder where you want your reviews to live, and run `/proxies init`. It creates `orgs/`, `knowledge/`, and `runs/` there, and offers to copy in the sample orgs. Your orgs and runs stay in that folder, so each project keeps its own reviews, and the plugin itself never holds your data.
+
+To work on Proxies itself, clone the repo and load it in place with `claude --plugin-dir .`.
 
 <img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
 
@@ -40,6 +43,7 @@ Not sure which one you need? Run `/proxies` on its own, or describe what you wan
 | `followup <run> <file>` | Check whether a revision answered their objections |
 | `compare <a> <b>` | Each proxy picks a version |
 | `ask <handle> "<question>"`, `talk <handle>` | Talk to one proxy |
+| `init` | Set up the current folder for Proxies, and copy in sample orgs |
 | `use <org>`, `org new`, `new`, `clone`, `calibrate` | Pick, build, and tune orgs and proxies (see below) |
 | `knowledge new`, `add`, `refresh` | Build a knowledge collection (see below) |
 | `export <org>`, `import <file>`, `pages` | Share an org as one JSON file, and publish results |
@@ -106,7 +110,7 @@ The results page opens after every run. Each run shows who blocks, the ranked fi
 
 To share an org, `/proxies export <org>` writes one JSON file with its proxies, calibration logs, and seats. The page's **Export** button copies the same JSON. `/proxies import <file>`, or `import` with no file to read the clipboard on macOS, never overwrites an org: add `--as <new-id>` for a second copy.
 
-Git does not keep client work out of the repo on its own. List client orgs, knowledge, and runs in `.git/info/exclude`, which stays on your machine:
+If your project folder is a git repository, `/proxies init` asks whether to commit your Proxies data. To keep one client's work out of a repo you do commit, list it in `.git/info/exclude`, which stays on your machine:
 
 ```
 orgs/acme/
@@ -116,7 +120,7 @@ runs/*acme*/
 
 ## How it works
 
-[ONTOLOGY.md](ONTOLOGY.md) defines every term.
+[ONTOLOGY.md](ONTOLOGY.md) defines every term. The plugin folder holds `seats/`, `formats/`, `scripts/`, `agents/`, `skills/`, and the sample `orgs/` and `runs/`. Your project folder holds your own `orgs/`, `knowledge/`, `runs/`, and any `seats/` you add, which override the plugin's.
 
 ```
 seats/                  role templates that every org reuses
@@ -125,8 +129,9 @@ knowledge/<id>/         index.md and sources/
 formats/                each review procedure, with a Facilitator section
 runs/<run>/             meta.md, input/ (the artifact), prompts/, one folder per round, summary.md
 scripts/                brief.ts (prompts), check.ts (run checks), runs.ts (results page), export and import
-.claude/agents/         proxy.md (one proxy per subagent) and describer.md (screen descriptions)
-.claude/skills/proxies/ SKILL.md (every run) and manage.md (org, proxy, knowledge, and page commands)
+agents/                 proxy.md (one proxy per subagent) and describer.md (screen descriptions)
+skills/proxies/         SKILL.md (every run) and manage.md (init, org, proxy, knowledge, and page commands)
+.claude-plugin/         plugin.json and marketplace.json
 ```
 
 A proxy's prompt layers its seat, its org, its own card, any expertise, and the round's instructions. Later layers win. `npm run check` checks every run, and the facilitator fact-checks each summary against the responses before it reports.
