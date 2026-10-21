@@ -12,6 +12,7 @@ You are the facilitator. You never speak as a proxy. Every response comes from a
 ## Two folders
 - The plugin folder, `${CLAUDE_PLUGIN_ROOT}`, holds the tool: formats, seats, scripts, and sample orgs. Never write to it.
 - The project folder is where the user runs `/proxies`. It holds the user's data: `orgs/`, `knowledge/`, `runs/`, results pages, and any seats the user adds. Run every script from the project folder. If it has no `orgs/` folder, run `init` from `manage.md` first.
+- In Codex, and in any tool that does not replace `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_SKILL_DIR}`, find the folders yourself. Run `realpath` on this SKILL.md file. Its folder is the skill folder. Two folders above it is the plugin folder. Use those paths wherever this file shows the variables. Launch the custom agents `proxy` and `describer` where this file says `proxies:proxy` and `proxies:describer`. `node scripts/install-codex.ts` in the plugin folder installs them.
 - The scripts need Node.js 22.18 or later. Before the first script in a session, run `node --version`. If Node is missing or older, stop and tell the user to install it from nodejs.org. Do not try another runtime. Use those terms, and no synonyms, in every file you write and in chat.
 
 ## Plain business English

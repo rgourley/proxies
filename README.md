@@ -28,6 +28,17 @@ Then open Claude Code in the folder where you want your reviews to live, and run
 
 To work on Proxies itself, clone the repo and load it in place with `claude --plugin-dir .`.
 
+### Codex
+
+Clone the repo and run its installer. It links the skill into `~/.agents/skills/` and writes the `proxy` and `describer` agents to `~/.codex/agents/`, from the same files Claude Code uses:
+
+```bash
+git clone https://github.com/rgourley/proxies.git
+node proxies/scripts/install-codex.ts
+```
+
+Run it again after you pull. Then use `$proxies` in Codex from any folder, the same way as `/proxies` in Claude Code.
+
 <img width="1050" height="608" alt="Screenshot 2026-10-14 at 2 35 10 PM" src="https://github.com/user-attachments/assets/549a67b7-7cc8-444d-b758-d6a829ac4761" />
 
 ## Commands
