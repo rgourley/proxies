@@ -142,6 +142,10 @@ A proxy's prompt layers its seat, its org, its own card, any expertise, and the 
 
 Runs are built to be cheap. A `describer` agent on a cheaper model writes down every word on each screenshot once, and proxies read that text instead of the images. Proxies read a collection's index and Required sources, and open the rest only when a point depends on it. A 12-proxy review of 50 screenshots dropped from about 2.6 million tokens to 0.85 million on the main model, plus 0.16 million on the cheaper one. The proxies themselves run on your session's model, because judgment is where quality matters.
 
+## Privacy
+
+Proxies collects no data and has no server. Your orgs and runs stay in your project folder. See [PRIVACY.md](PRIVACY.md).
+
 ## License
 
 [PolyForm Shield 1.0.0](LICENSE.md). You can use, change, and share Proxies for any purpose, including inside your company, except to build a product that competes with it. Versions published before this change keep the FSL-1.1-MIT license they shipped with.
